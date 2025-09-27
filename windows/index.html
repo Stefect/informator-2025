@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Screen Capture</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+        .source-selector {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+        .source-selector button {
+            background-color: #2196F3;
+        }
+        .source-selector button.active {
+            background-color: #1976D2;
+        }
+        #video {
+            width: 100%;
+            max-width: 800px;
+            background-color: #000;
+            border-radius: 4px;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #f8f8f8;
+            display: none; /* Hide status messages */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <button id="startBtn">Start Capture</button>
+            <button id="stopBtn">Stop Capture</button>
+            <div class="source-selector">
+                <button id="desktopBtn" class="active">Desktop</button>
+                <button id="cameraBtn">Camera</button>
+            </div>
+        </div>
+        <video id="video" autoplay></video>
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const desktopBtn = document.getElementById('desktopBtn');
+        const cameraBtn = document.getElementById('cameraBtn');
+        const status = document.getElementById('status');
+
+        let ws = null;
+        let currentSource = 'desktop';
+
+        function connect() {
+            try {
+                ws = new WebSocket('ws://localhost:9000');
+
+                ws.onopen = () => {
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                };
+
+                ws.onclose = () => {
+                    startBtn.disabled = true;
+                    stopBtn.disabled = true;
+                    setTimeout(connect, 1000);
+                };
+
+                ws.onerror = () => {
+                    startBtn.disabled = true;
+                    stopBtn.disabled = true;
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        if (data.type === 'frame') {
+                            const img = new Image();
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                canvas.width = video.videoWidth || 800;
+                                canvas.height = video.videoHeight || 600;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0);
+                                video.srcObject = canvas.captureStream();
+                            };
+                            img.src = 'data:image/jpeg;base64,' + data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error parsing message:', error);
+                    }
+                };
+            } catch (error) {
+                console.error('Error creating WebSocket:', error);
+                setTimeout(connect, 1000);
+            }
+        }
+
+        startBtn.addEventListener('click', () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'start' }));
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'stop' }));
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        });
+
+        function switchSource(source) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                currentSource = source;
+                ws.send(JSON.stringify({ 
+                    type: 'switchSource',
+                    source: source
+                }));
+                
+                desktopBtn.classList.toggle('active', source === 'desktop');
+                cameraBtn.classList.toggle('active', source === 'camera');
+            }
+        }
+
+        desktopBtn.addEventListener('click', () => switchSource('desktop'));
+        cameraBtn.addEventListener('click', () => switchSource('camera'));
+
+        // Initial connection
+        connect();
+    </script>
+</body>
+</html> 

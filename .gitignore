@@ -1,0 +1,46 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build output
+dist/
+build/
+release/
+frames/
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+
+# VSCode
+.vscode/
+
+# Electron/packager
+win-unpacked/
+*.exe
+*.dll
+*.bin
+*.pak
+*.dat
+*.so
+*.pdb
+*.lib
+*.exp
+*.iobj
+*.ipdb
+*.tlog
+*.asar
+
+# Misc
+*.bak
