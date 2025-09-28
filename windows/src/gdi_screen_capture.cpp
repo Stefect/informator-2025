@@ -28,6 +28,7 @@ static int targetFPS = 5;
 static int jpegQuality = 75;
 static float resolutionScale = 0.5f;
 static bool hasActiveClients = true;
+static bool captureCursor = false;  // За замовчуванням НЕ захоплюємо курсор
 
 // Структура для зберігання розмірів екрану
 struct ScreenSize {
@@ -145,10 +146,11 @@ std::vector<uint8_t> captureScreen() {
     
     HGDIOBJ hOldBitmap = SelectObject(hdcMemory, hBitmap);
 
-    // Захоплення екрану
+    // Захоплення екрану БЕЗ курсора для усунення мелькання
     bool result = false;
     BOOL dwmEnabled = FALSE;
     
+    // Спочатку пробуємо DWM захоплення без курсора
     if (SUCCEEDED(DwmIsCompositionEnabled(&dwmEnabled)) && dwmEnabled) {
         result = PrintWindow(GetDesktopWindow(), hdcMemory, PW_RENDERFULLCONTENT);
     }
@@ -156,10 +158,15 @@ std::vector<uint8_t> captureScreen() {
     if (!result) {
         SetStretchBltMode(hdcMemory, HALFTONE);
         SetBrushOrgEx(hdcMemory, 0, 0, NULL);
+        // Використовуємо налаштування захоплення курсора
+        DWORD rop = SRCCOPY;
+        if (captureCursor) {
+            rop |= CAPTUREBLT;  // Додаємо захоплення курсора тільки якщо потрібно
+        }
         result = StretchBlt(
             hdcMemory, 0, 0, captureWidth, captureHeight,
             hdcScreen, 0, 0, screenWidth, screenHeight,
-            SRCCOPY | CAPTUREBLT
+            rop
         );
     }
 
@@ -253,6 +260,16 @@ Napi::Value SetActiveClientsMethod(const Napi::CallbackInfo& info) {
     return env.Undefined();
 }
 
+Napi::Value SetCaptureCursorMethod(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+    
+    if (info.Length() > 0 && info[0].IsBoolean()) {
+        captureCursor = info[0].As<Napi::Boolean>().Value();
+    }
+    
+    return env.Undefined();
+}
+
 // Ініціалізація модуля
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
     // Ініціалізація GDI+
@@ -267,6 +284,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
     exports.Set("setResolutionScale", Napi::Function::New(env, SetResolutionScaleMethod));
     exports.Set("setTargetFPS", Napi::Function::New(env, SetTargetFPSMethod));
     exports.Set("setActiveClients", Napi::Function::New(env, SetActiveClientsMethod));
+    exports.Set("setCaptureCursor", Napi::Function::New(env, SetCaptureCursorMethod));
     
     return exports;
 }

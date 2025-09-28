@@ -1,0 +1,27 @@
+{
+  "name": "informator-client",
+  "version": "1.0.0",
+  "description": "Node.js Windows screen capture client",
+  "main": "dist/client.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/client.js",
+    "dev": "ts-node src/client.ts",
+    "rebuild": "npm run build"
+  },
+  "dependencies": {
+    "ws": "^8.14.2",
+    "node-fetch": "^2.7.0",
+    "node-addon-api": "^8.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/ws": "^8.5.6",
+    "typescript": "^5.2.2",
+    "ts-node": "^10.9.1",
+    "node-gyp": "^10.0.0"
+  },
+  "keywords": ["screen-capture", "windows", "streaming", "napi"],
+  "author": "Informator Team",
+  "license": "MIT"
+}

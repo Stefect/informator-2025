@@ -174,6 +174,14 @@ app.get('/', (req, res) => {
                 };
 
                 ws.onmessage = function(event) {
+                    // Обробка текстових повідомлень (підтвердження FPS)
+                    if (typeof event.data === 'string' && event.data.startsWith('fps_changed:')) {
+                        const newFPS = event.data.split(':')[1];
+                        console.log('FPS підтверджено:', newFPS);
+                        infoEl.innerHTML = '✅ Швидкість кадрів змінено на ' + newFPS + ' FPS';
+                        return;
+                    }
+                    
                     if (event.data instanceof Blob && isStreaming) {
                         // Конвертуємо Blob у зображення та малюємо на canvas
                         const url = URL.createObjectURL(event.data);
@@ -358,6 +366,11 @@ wss.on('connection', (ws) => {
         currentFPS = fps;
         console.log('🎯 Зміна FPS на:', fps);
         screenCapture.setTargetFPS(fps);
+        
+        // Надсилаємо підтвердження клієнту
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(`fps_changed:${fps}`);
+        }
         
         // Якщо стрім активний, перезапускаємо з новим FPS
         if (isActiveStream) {
