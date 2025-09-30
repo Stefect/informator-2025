@@ -3,81 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="0; url=http://localhost:3001/" />
     <title>Informator - Система захоплення екрану</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #333;
-            display: flex;
-            flex-direction: column;
             min-height: 100vh;
+            display: flex;
             align-items: center;
             justify-content: center;
-            text-align: center;
         }
+
         .container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 2rem;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 3rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
         }
-        h1 {
-            color: #2c3e50;
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
             margin-bottom: 1rem;
         }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            font-size: 2rem;
+        }
+
         p {
             margin-bottom: 1.5rem;
             font-size: 1.1rem;
             line-height: 1.6;
+            color: #555;
         }
+
+        .screen-container {
+            background: #000;
+            border-radius: 10px;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #screenCanvas {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 10px;
+        }
+
+        .loading {
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
         .button {
             display: inline-block;
-            background-color: #3498db;
+            background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
             text-decoration: none;
             padding: 12px 24px;
-            border-radius: 5px;
+            border-radius: 25px;
             font-weight: bold;
-            font-size: 1.1rem;
-            transition: background-color 0.2s;
-            margin: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            min-width: 120px;
         }
+
         .button:hover {
-            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
+
         .button.secondary {
-            background-color: #95a5a6;
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
         }
-        .button.secondary:hover {
-            background-color: #7f8c8d;
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .status-connected {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00aa00;
+            color: #00aa00;
+        }
+
+        .status-disconnected {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid #cc0000;
+            color: #cc0000;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-connected .status-dot {
+            background: #00aa00;
+        }
+
+        .status-disconnected .status-dot {
+            background: #cc0000;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .footer {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+            font-size: 0.9rem;
+            color: #777;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Informator - Система захоплення екрану</h1>
-        <p>Вас буде автоматично перенаправлено на сторінку перегляду екрану.</p>
-        <p>Якщо перенаправлення не відбувається, будь ласка, натисніть на кнопку нижче:</p>
+        <div class="logo">📺 Informator</div>
+        <h1>Система захоплення екрану</h1>
+        <p>Перегляд робочого столу в реальному часі</p>
         
-        <a href="http://localhost:3001/" class="button">Перейти до інтерфейсу</a>
-        <a href="README.txt" class="button secondary">Інструкція з використання</a>
-        
-        <p style="margin-top: 2rem;">
-            <a href="demo.mp4" style="color: #3498db;">Переглянути демо-відео</a>
-        </p>
+        <div class="status">
+            <div id="connectionStatus" class="status-indicator status-disconnected">
+                <div class="status-dot"></div>
+                <span>Підключення...</span>
+            </div>
+        </div>
+
+        <div class="screen-container">
+            <canvas id="screenCanvas"></canvas>
+            <div id="loadingMessage" class="loading">Підключення до сервера...</div>
+        </div>
+
+        <div class="controls">
+            <button class="button" onclick="connect()">Підключитись</button>
+            <button class="button" onclick="disconnect()">Відключитись</button>
+            <button class="button secondary" onclick="toggleFullscreen()">Повний екран</button>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 Informator Team - Система моніторингу екрану</p>
+        </div>
     </div>
-    
+
     <script>
-        // Для забезпечення перенаправлення навіть якщо мета-теги не спрацюють
-        setTimeout(function() {
-            window.location.href = 'http://localhost:3001/';
-        }, 2000);
+        let ws = null;
+        let canvas = null;
+        let ctx = null;
+        let isConnected = false;
+
+        function initializeCanvas() {
+            canvas = document.getElementById('screenCanvas');
+            ctx = canvas.getContext('2d');
+            canvas.style.display = 'none';
+        }
+
+        function connect() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                return;
+            }
+
+            try {
+                ws = new WebSocket('ws://localhost:3001');
+                
+                ws.onopen = function() {
+                    console.log('Підключено до WebSocket сервера');
+                    updateConnectionStatus(true);
+                    document.getElementById('loadingMessage').textContent = 'Очікування відео...';
+                };
+
+                ws.onmessage = function(event) {
+                    if (event.data instanceof Blob) {
+                        const img = new Image();
+                        img.onload = function() {
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0);
+                            canvas.style.display = 'block';
+                            document.getElementById('loadingMessage').style.display = 'none';
+                        };
+                        img.src = URL.createObjectURL(event.data);
+                    }
+                };
+
+                ws.onclose = function() {
+                    console.log('Відключено від WebSocket сервера');
+                    updateConnectionStatus(false);
+                    document.getElementById('loadingMessage').textContent = 'Підключення втрачено';
+                    document.getElementById('loadingMessage').style.display = 'block';
+                    canvas.style.display = 'none';
+                };
+
+                ws.onerror = function(error) {
+                    console.error('Помилка WebSocket:', error);
+                    updateConnectionStatus(false);
+                    document.getElementById('loadingMessage').textContent = 'Помилка підключення';
+                };
+
+            } catch (error) {
+                console.error('Помилка створення WebSocket:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            updateConnectionStatus(false);
+            document.getElementById('loadingMessage').textContent = 'Відключено';
+            document.getElementById('loadingMessage').style.display = 'block';
+            canvas.style.display = 'none';
+        }
+
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            const statusElement = document.getElementById('connectionStatus');
+            if (connected) {
+                statusElement.className = 'status-indicator status-connected';
+                statusElement.innerHTML = '<div class="status-dot"></div><span>Підключено</span>';
+            } else {
+                statusElement.className = 'status-indicator status-disconnected';
+                statusElement.innerHTML = '<div class="status-dot"></div><span>Відключено</span>';
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Ініціалізація при завантаженні сторінки
+        window.onload = function() {
+            initializeCanvas();
+            // Автоматичне підключення через 1 секунду
+            setTimeout(connect, 1000);
+        };
+
+        // Обробка клавіш
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'F11') {
+                event.preventDefault();
+                toggleFullscreen();
+            }
+        });
     </script>
 </body>
 </html>
