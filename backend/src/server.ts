@@ -4,6 +4,41 @@ import { createServer } from 'http';
 import cors from 'cors';
 import path from 'path';
 
+// Rate limiting для запобігання перевантаженню
+interface RateLimitInfo {
+  count: number;
+  resetTime: number;
+}
+
+class RateLimiter {
+  private limits = new Map<string, RateLimitInfo>();
+  private maxRequests = 30; // 30 запитів на хвилину на IP
+  private windowMs = 60000; // 1 хвилина
+
+  public isAllowed(ip: string): boolean {
+    const now = Date.now();
+    const limit = this.limits.get(ip);
+
+    if (!limit || now > limit.resetTime) {
+      this.limits.set(ip, { count: 1, resetTime: now + this.windowMs });
+      return true;
+    }
+
+    if (limit.count >= this.maxRequests) {
+      return false;
+    }
+
+    limit.count++;
+    return true;
+  }
+
+  public getRemainingRequests(ip: string): number {
+    const limit = this.limits.get(ip);
+    if (!limit) return this.maxRequests;
+    return Math.max(0, this.maxRequests - limit.count);
+  }
+}
+
 interface ClientConfig {
   fps: number;
   quality: number;
@@ -64,6 +99,7 @@ class InformatorBackend {
   private frames = new Map<string, Buffer>();
   private stats: ServerStats;
   private startTime: number;
+  private rateLimiter = new RateLimiter(); // Додаємо rate limiter
   
   // Авторизація
   private readonly PASSWORD = 'informator2025'; // Простий пароль
@@ -117,7 +153,34 @@ class InformatorBackend {
     }));
 
     this.app.use(express.json({ limit: '50mb' }));
-    this.app.use(express.static(path.join(__dirname, '../frontend')));
+    
+    // Rate limiting middleware
+    this.app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+      const clientIP = req.ip || req.socket.remoteAddress || 'unknown';
+      
+      // Пропускаємо rate limiting для локальних запитів
+      if (clientIP === '127.0.0.1' || clientIP === '::1' || clientIP.startsWith('192.168.')) {
+        return next();
+      }
+      
+      if (!this.rateLimiter.isAllowed(clientIP)) {
+        const remaining = this.rateLimiter.getRemainingRequests(clientIP);
+        res.set({
+          'X-RateLimit-Limit': '30',
+          'X-RateLimit-Remaining': remaining.toString(),
+          'X-RateLimit-Reset': (Date.now() + 60000).toString()
+        });
+        return res.status(429).json({ 
+          error: 'Too Many Requests', 
+          message: 'Rate limit exceeded. Please wait before making more requests.',
+          retryAfter: 60
+        });
+      }
+      
+      next();
+    });
+    
+    this.app.use(express.static(path.join(__dirname, '../../frontend')));
 
     // Створюємо HTTP сервер
     this.server = createServer(this.app);
@@ -134,20 +197,31 @@ class InformatorBackend {
                   req.headers['x-auth-token'] as string ||
                   req.query.token as string;
     
-    if (!token) return false;
+    console.log(`[Auth Check] URL: ${req.url}, Authorization header: ${req.headers.authorization || 'відсутній'}`);
+    console.log(`[Auth Check] Extracted token: ${token ? token.substring(0, 10) + '...' : 'відсутній'}`);
+    
+    if (!token) {
+      console.log('[Auth Check] Немає токена, доступ заборонено');
+      return false;
+    }
     
     const session = this.authSessions.get(token);
-    if (!session) return false;
+    if (!session) {
+      console.log('[Auth Check] Сесія не знайдена для токена');
+      return false;
+    }
     
     // Токен дійсний 24 години
     const isExpired = (Date.now() - session.createdAt.getTime()) > 24 * 60 * 60 * 1000;
     if (isExpired) {
+      console.log('[Auth Check] Токен прострочений');
       this.authSessions.delete(token);
       return false;
     }
     
     // Оновлюємо активність
     session.lastActivity = new Date();
+    console.log('[Auth Check] Аутентифікація успішна');
     return true;
   }
 
@@ -198,7 +272,7 @@ class InformatorBackend {
       lastActivity: new Date(),
       isCapturing: false,
       config: {
-        fps: 5,
+        fps: 20,
         quality: 75,
         resolutionScale: 1.0
       },
@@ -225,20 +299,47 @@ class InformatorBackend {
 
     // Обробка відключення клієнта
     ws.on('close', () => {
+      console.log(`[Backend] Клієнт ${clientId} відключився`);
       this.handleClientDisconnect(clientId);
     });
 
     // Обробка помилок WebSocket
     ws.on('error', (error: Error) => {
-      console.error(`[Backend] Помилка WebSocket для ${clientId}:`, error);
-      this.handleClientDisconnect(clientId);
+      console.error(`[Backend] Помилка WebSocket для ${clientId}:`, error.message);
+      // Не викликаємо handleClientDisconnect тут, щоб уникнути подвійного видалення
+      try {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      } catch (e) {
+        // Ігноруємо помилки при закритті
+      }
     });
 
+    // Ping для підтримки з'єднання
+    const pingInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          this.sendToClient(clientId, { type: 'ping' });
+        } catch (error) {
+          console.error(`[Backend] Помилка ping для ${clientId}:`, error);
+          clearInterval(pingInterval);
+          this.handleClientDisconnect(clientId);
+        }
+      } else {
+        clearInterval(pingInterval);
+      }
+    }, 30000); // Ping кожні 30 секунд
+
     // Надіслати привітання клієнту
-    this.sendToClient(clientId, {
-      type: 'connection_established',
-      message: 'Підключення успішне'
-    });
+    try {
+      this.sendToClient(clientId, {
+        type: 'connection_established',
+        message: 'Підключення успішне'
+      });
+    } catch (error) {
+      console.error(`[Backend] Не вдалося відправити привітання ${clientId}:`, error);
+    }
   }
 
   private handleClientMessage(clientId: string, message: ClientMessage) {
@@ -350,15 +451,34 @@ class InformatorBackend {
 
   private sendToClient(clientId: string, message: ServerMessage) {
     const client = this.clients.get(clientId);
-    if (!client || client.ws.readyState !== WebSocket.OPEN) {
+    if (!client) {
+      console.warn(`[Backend] Клієнт ${clientId} не знайдений для відправки повідомлення`);
+      return;
+    }
+
+    if (client.ws.readyState !== WebSocket.OPEN) {
+      console.warn(`[Backend] WebSocket для ${clientId} не відкритий (стан: ${client.ws.readyState})`);
+      // Автоматично видаляємо клієнта з неактивним з'єднанням
+      if (client.ws.readyState === WebSocket.CLOSED || client.ws.readyState === WebSocket.CLOSING) {
+        this.handleClientDisconnect(clientId);
+      }
       return;
     }
 
     try {
-      client.ws.send(JSON.stringify(message));
+      const messageStr = JSON.stringify(message);
+      client.ws.send(messageStr);
+      client.lastActivity = new Date(); // Оновлюємо час останньої активності
     } catch (error) {
       console.error(`[Backend] Помилка відправки повідомлення до ${clientId}:`, error);
-      this.handleClientDisconnect(clientId);
+      // Не викликаємо handleClientDisconnect тут, щоб уникнути рекурсії
+      try {
+        if (client.ws.readyState === WebSocket.OPEN) {
+          client.ws.close();
+        }
+      } catch (closeError) {
+        // Ігноруємо помилки закриття
+      }
     }
   }
 
@@ -504,12 +624,70 @@ class InformatorBackend {
           };
           res.write(`data: ${JSON.stringify(eventData)}\n\n`);
         }
-      }, 200); // 5 FPS
+      }, 50); // 20 FPS (1000ms / 20 = 50ms)
 
       req.on('close', () => {
         clearInterval(intervalId);
         console.log(`[Backend] HTTP Stream клієнт відключився від ${clientId}`);
       });
+    });
+
+    // API для отримання інформації про мережу
+    this.app.get('/api/network-info', this.requireAuth, (req, res) => {
+      try {
+        const os = require('os');
+        const networkInterfaces = os.networkInterfaces();
+        let localIP = 'localhost';
+
+        // Знайти локальний IP
+        for (const interfaceName of Object.keys(networkInterfaces)) {
+          const networkInterface = networkInterfaces[interfaceName];
+          for (const alias of networkInterface) {
+            if (alias.family === 'IPv4' && !alias.internal) {
+              localIP = alias.address;
+              break;
+            }
+          }
+          if (localIP !== 'localhost') break;
+        }
+
+        res.json({ localIP });
+      } catch (error) {
+        res.status(500).json({ error: 'Помилка отримання мережевої інформації' });
+      }
+    });
+
+    // API для перевірки статусу ngrok
+    this.app.get('/api/ngrok-status', this.requireAuth, (req, res) => {
+      // Тут буде логіка перевірки ngrok через API або файл
+      res.json({ status: 'inactive', url: null });
+    });
+
+    // API для активації ngrok
+    this.app.post('/api/activate-ngrok', this.requireAuth, (req, res) => {
+      try {
+        // Запуск ngrok через Windows batch script
+        const spawn = require('child_process').spawn;
+        const ngrokProcess = spawn('cmd', ['/c', 'start-ngrok.bat'], {
+          cwd: process.cwd().replace('backend', ''),
+          detached: true,
+          stdio: 'ignore'
+        });
+
+        ngrokProcess.unref();
+        
+        res.json({ 
+          success: true, 
+          message: 'Ngrok активується...', 
+          url: 'Активується...' 
+        });
+      } catch (error) {
+        console.error('Помилка запуску ngrok:', error);
+        res.status(500).json({ 
+          success: false, 
+          error: 'Помилка запуску ngrok' 
+        });
+      }
     });
 
     console.log('[Backend] HTTP маршрути налаштовано');

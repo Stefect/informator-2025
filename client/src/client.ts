@@ -21,7 +21,7 @@ class ScreenCaptureClient {
   constructor(config: Partial<Config> = {}) {
     this.config = {
       serverUrl: 'ws://localhost:8080',
-      fps: 5,
+      fps: 20,
       quality: 75,
       resolutionScale: 1.0,
       reconnectInterval: 5000,
