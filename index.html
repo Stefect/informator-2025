@@ -222,36 +222,51 @@
                 };
 
                 ws.onmessage = function(event) {
-                    if (event.data instanceof Blob) {
-                        const img = new Image();
-                        img.onload = function() {
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                            ctx.drawImage(img, 0, 0);
-                            canvas.style.display = 'block';
-                            document.getElementById('loadingMessage').style.display = 'none';
-                        };
-                        img.src = URL.createObjectURL(event.data);
+                    try {
+                        // Спробуємо парсити як JSON повідомлення
+                        const message = JSON.parse(event.data);
+                        console.log('Отримано повідомлення:', message.type);
+                    } catch (e) {
+                        // Якщо це не JSON, то це може бути бінарні дані (зображення)
+                        if (event.data instanceof Blob) {
+                            const img = new Image();
+                            img.onload = function() {
+                                canvas.width = img.width;
+                                canvas.height = img.height;
+                                ctx.drawImage(img, 0, 0);
+                                canvas.style.display = 'block';
+                                document.getElementById('loadingMessage').style.display = 'none';
+                            };
+                            img.src = URL.createObjectURL(event.data);
+                        }
                     }
                 };
 
                 ws.onclose = function() {
                     console.log('Відключено від WebSocket сервера');
                     updateConnectionStatus(false);
-                    document.getElementById('loadingMessage').textContent = 'Підключення втрачено';
+                    document.getElementById('loadingMessage').textContent = 'Підключення втрачено. Спроба перепідключення...';
                     document.getElementById('loadingMessage').style.display = 'block';
                     canvas.style.display = 'none';
+                    
+                    // Автоматичне перепідключення через 3 секунди
+                    setTimeout(() => {
+                        if (!isConnected) {
+                            connect();
+                        }
+                    }, 3000);
                 };
 
                 ws.onerror = function(error) {
                     console.error('Помилка WebSocket:', error);
                     updateConnectionStatus(false);
-                    document.getElementById('loadingMessage').textContent = 'Помилка підключення';
+                    document.getElementById('loadingMessage').textContent = 'Помилка підключення до сервера';
                 };
 
             } catch (error) {
                 console.error('Помилка створення WebSocket:', error);
                 updateConnectionStatus(false);
+                document.getElementById('loadingMessage').textContent = 'Не вдалося підключитися до сервера';
             }
         }
 
@@ -291,6 +306,13 @@
             initializeCanvas();
             // Автоматичне підключення через 1 секунду
             setTimeout(connect, 1000);
+            
+            // Ping кожні 30 секунд для підтримки з'єднання
+            setInterval(function() {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'ping' }));
+                }
+            }, 30000);
         };
 
         // Обробка клавіш

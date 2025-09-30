@@ -53,14 +53,16 @@ wss.on('connection', (ws, req) => {
                     console.log(`[Server] Невідомий тип повідомлення: ${message.type}`);
             }
         } catch (error) {
-            console.error('[Server] Помилка обробки повідомлення:', error);
+            // Якщо це не JSON, можливо це бінарні дані
+            console.log('[Server] Отримано бінарні дані, розсилаємо клієнтам');
+            broadcastToClients(data, ws);
         }
     });
 
     // Обробка відключення
     ws.on('close', () => {
         connectedClients.delete(ws);
-        console.log(`[Server] Клієнт відключився. Залишилось: ${connectedClients.size}`);
+        console.log(`[Server] Клієнт відключився. Активних підключень: ${connectedClients.size}`);
     });
 
     // Обробка помилок
@@ -68,6 +70,8 @@ wss.on('connection', (ws, req) => {
         console.error('[Server] Помилка WebSocket:', error);
         connectedClients.delete(ws);
     });
+
+    console.log(`[Server] Всього активних підключень: ${connectedClients.size}`);
 });
 
 // Функція для розсилки даних всім клієнтам
