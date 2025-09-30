@@ -188,6 +188,7 @@
             <button class="button" onclick="connect()">Підключитись</button>
             <button class="button" onclick="disconnect()">Відключитись</button>
             <button class="button secondary" onclick="toggleFullscreen()">Повний екран</button>
+            <button class="button secondary" onclick="sendTestImage()">Тест зображення</button>
         </div>
 
         <div class="footer">
@@ -226,16 +227,38 @@
                         // Спробуємо парсити як JSON повідомлення
                         const message = JSON.parse(event.data);
                         console.log('Отримано повідомлення:', message.type);
+                        
+                        if (message.type === 'connected') {
+                            document.getElementById('loadingMessage').textContent = 'Готово до отримання зображень';
+                        }
                     } catch (e) {
                         // Якщо це не JSON, то це може бути бінарні дані (зображення)
                         if (event.data instanceof Blob) {
                             const img = new Image();
                             img.onload = function() {
-                                canvas.width = img.width;
-                                canvas.height = img.height;
-                                ctx.drawImage(img, 0, 0);
+                                // Підганяємо розмір canvas під зображення, але зберігаємо пропорції
+                                const maxWidth = 760;
+                                const maxHeight = 380;
+                                let newWidth = img.width;
+                                let newHeight = img.height;
+                                
+                                if (newWidth > maxWidth) {
+                                    newHeight = (newHeight * maxWidth) / newWidth;
+                                    newWidth = maxWidth;
+                                }
+                                
+                                if (newHeight > maxHeight) {
+                                    newWidth = (newWidth * maxHeight) / newHeight;
+                                    newHeight = maxHeight;
+                                }
+                                
+                                canvas.width = newWidth;
+                                canvas.height = newHeight;
+                                ctx.drawImage(img, 0, 0, newWidth, newHeight);
                                 canvas.style.display = 'block';
                                 document.getElementById('loadingMessage').style.display = 'none';
+                                
+                                console.log('Відображено зображення:', newWidth + 'x' + newHeight);
                             };
                             img.src = URL.createObjectURL(event.data);
                         }
@@ -299,6 +322,61 @@
             } else {
                 document.exitFullscreen();
             }
+        }
+
+        function sendTestImage() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('WebSocket не підключений. Спочатку підключіться до сервера.');
+                return;
+            }
+
+            // Створюємо тимчасовий canvas для тестового зображення
+            const testCanvas = document.createElement('canvas');
+            testCanvas.width = 800;
+            testCanvas.height = 600;
+            const testCtx = testCanvas.getContext('2d');
+
+            // Створюємо градієнтний фон
+            const gradient = testCtx.createLinearGradient(0, 0, 800, 600);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+            testCtx.fillStyle = gradient;
+            testCtx.fillRect(0, 0, 800, 600);
+
+            // Додаємо текст
+            testCtx.fillStyle = 'white';
+            testCtx.font = 'bold 48px Arial';
+            testCtx.textAlign = 'center';
+            testCtx.fillText('🖥️ INFORMATOR TEST', 400, 200);
+
+            testCtx.font = '32px Arial';
+            testCtx.fillText('Screen Capture System', 400, 260);
+
+            testCtx.font = '24px Arial';
+            testCtx.fillText('Час: ' + new Date().toLocaleTimeString(), 400, 320);
+
+            // Додаємо анімований елемент
+            const time = Date.now() / 1000;
+            const x = 400 + Math.sin(time) * 100;
+            const y = 400 + Math.cos(time) * 50;
+
+            testCtx.fillStyle = '#FFD700';
+            testCtx.beginPath();
+            testCtx.arc(x, y, 20, 0, 2 * Math.PI);
+            testCtx.fill();
+
+            // Рамка
+            testCtx.strokeStyle = 'white';
+            testCtx.lineWidth = 5;
+            testCtx.strokeRect(10, 10, 780, 580);
+
+            // Відправляємо зображення
+            testCanvas.toBlob(function(blob) {
+                if (blob) {
+                    ws.send(blob);
+                    console.log('Відправлено тестове зображення');
+                }
+            }, 'image/jpeg', 0.9);
         }
 
         // Ініціалізація при завантаженні сторінки
