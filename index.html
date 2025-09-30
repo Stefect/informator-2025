@@ -181,7 +181,10 @@
 
         <div class="screen-container">
             <canvas id="screenCanvas"></canvas>
-            <div id="loadingMessage" class="loading">Підключення до сервера...</div>
+            <div id="loadingMessage" class="loading">
+                Підключення до сервера... 
+                <br><small>Після підключення натисніть "Тест зображення" для демонстрації</small>
+            </div>
         </div>
 
         <div class="controls">
@@ -193,6 +196,7 @@
 
         <div class="footer">
             <p>© 2025 Informator Team - Система моніторингу екрану</p>
+            <p><small>Отримано кадрів: <span id="frameCounter">0</span></small></p>
         </div>
     </div>
 
@@ -201,6 +205,7 @@
         let canvas = null;
         let ctx = null;
         let isConnected = false;
+        let frameCount = 0;
 
         function initializeCanvas() {
             canvas = document.getElementById('screenCanvas');
@@ -229,7 +234,8 @@
                         console.log('Отримано повідомлення:', message.type);
                         
                         if (message.type === 'connected') {
-                            document.getElementById('loadingMessage').textContent = 'Готово до отримання зображень';
+                            document.getElementById('loadingMessage').innerHTML = 
+                                'Готово до отримання зображень<br><small>Натисніть "Тест зображення" щоб перевірити роботу системи</small>';
                         }
                     } catch (e) {
                         // Якщо це не JSON, то це може бути бінарні дані (зображення)
@@ -258,7 +264,9 @@
                                 canvas.style.display = 'block';
                                 document.getElementById('loadingMessage').style.display = 'none';
                                 
-                                console.log('Відображено зображення:', newWidth + 'x' + newHeight);
+                                frameCount++;
+                                document.getElementById('frameCounter').textContent = frameCount;
+                                console.log('Відображено зображення #' + frameCount + ':', newWidth + 'x' + newHeight);
                             };
                             img.src = URL.createObjectURL(event.data);
                         }
@@ -299,7 +307,9 @@
                 ws = null;
             }
             updateConnectionStatus(false);
-            document.getElementById('loadingMessage').textContent = 'Відключено';
+            frameCount = 0;
+            document.getElementById('frameCounter').textContent = frameCount;
+            document.getElementById('loadingMessage').innerHTML = 'Відключено<br><small>Натисніть "Підключитись" для відновлення з\'єднання</small>';
             document.getElementById('loadingMessage').style.display = 'block';
             canvas.style.display = 'none';
         }
