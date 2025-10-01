@@ -194,6 +194,24 @@
             <button class="button secondary" onclick="sendTestImage()">Тест зображення</button>
         </div>
 
+        <!-- Інструкції для remote підключення -->
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; margin: 2rem 0; border-left: 4px solid #667eea;">
+            <h3 style="margin: 0 0 1rem 0; color: #2c3e50;">🌐 Підключення з інших пристроїв</h3>
+            <p style="margin: 0 0 0.5rem 0;"><strong>Поточна адреса:</strong> <span id="currentUrl" style="color: #667eea; font-family: monospace;"></span></p>
+            <p style="margin: 0 0 1rem 0; font-size: 0.9rem; color: #666;">
+                Скопіюйте цю адресу та відкрийте на будь-якому пристрої в тій же мережі
+            </p>
+            <details style="margin-top: 1rem;">
+                <summary style="cursor: pointer; font-weight: bold; color: #667eea;">📱 Інструкції підключення</summary>
+                <div style="margin-top: 1rem; padding-left: 1rem;">
+                    <p><strong>💻 З комп'ютера:</strong> Відкрийте браузер та введіть адресу вище</p>
+                    <p><strong>📱 З телефону/планшета:</strong> Підключіться до тієї ж Wi-Fi мережі та відкрийте адресу в браузері</p>
+                    <p><strong>🔗 QR код:</strong> <span id="qrStatus">Генерується...</span></p>
+                    <div id="qrCode" style="margin: 1rem 0; text-align: center;"></div>
+                </div>
+            </details>
+        </div>
+
         <div class="footer">
             <p>© 2025 Informator Team - Система моніторингу екрану</p>
             <p><small>Отримано кадрів: <span id="frameCounter">0</span></small></p>
@@ -219,12 +237,23 @@
             }
 
             try {
-                ws = new WebSocket('ws://localhost:3001');
+                // Автоматично визначаємо адресу сервера
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const host = window.location.host || 'localhost:3001';
+                const wsUrl = `${protocol}//${host}`;
+                
+                console.log('Підключення до:', wsUrl);
+                ws = new WebSocket(wsUrl);
                 
                 ws.onopen = function() {
                     console.log('Підключено до WebSocket сервера');
                     updateConnectionStatus(true);
                     document.getElementById('loadingMessage').textContent = 'Очікування відео...';
+                    
+                    // Повідомляємо сервер що ми viewer
+                    ws.send(JSON.stringify({
+                        type: 'viewer_join'
+                    }));
                 };
 
                 ws.onmessage = function(event) {
@@ -392,6 +421,8 @@
         // Ініціалізація при завантаженні сторінки
         window.onload = function() {
             initializeCanvas();
+            updateCurrentUrl(); // Відображення поточної URL та QR коду
+            
             // Автоматичне підключення через 1 секунду
             setTimeout(connect, 1000);
             
@@ -402,6 +433,16 @@
                 }
             }, 30000);
         };
+
+        function updateCurrentUrl() {
+            const currentUrl = window.location.href;
+            document.getElementById('currentUrl').textContent = currentUrl;
+            
+            // Простий QR код через зовнішній сервіс
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(currentUrl)}`;
+            document.getElementById('qrCode').innerHTML = `<img src="${qrUrl}" alt="QR код для підключення" style="border: 1px solid #ddd; border-radius: 5px;">`;
+            document.getElementById('qrStatus').textContent = 'Відскануйте QR код камерою телефону';
+        }
 
         // Обробка клавіш
         document.addEventListener('keydown', function(event) {
