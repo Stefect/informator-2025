@@ -9,16 +9,9 @@
     "build:all": "npm run build:native && npm run build",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
-    "dev:server": "ts-node src/server.ts",
     "client": "ts-node src/capture-client.ts",
     "clean": "rmdir /s /q dist 2>nul || true",
     "test": "node test/test-capture.js",
-    "codespaces": "concurrently \"npm run start:backend\" \"npm run start:web\" \"npm run start:client\"",
-    "start:backend": "cd backend && npm start",
-    "start:web": "cd windows && npm start",
-    "start:client": "cd client && npm start || echo 'Client може не працювати в Linux Codespace'",
-    "setup:codespaces": "chmod +x .devcontainer/setup.sh && .devcontainer/setup.sh",
-    "dev:codespaces": "concurrently \"cd backend && npm run dev\" \"cd windows && npm run dev\" --names \"API,WEB\" --prefix-colors \"blue,green\"",
     "postinstall": "node -e \"if (process.platform === 'win32') { require('child_process').execSync('npm run build:native', {stdio: 'inherit'}) }\""
   },
   "dependencies": {
@@ -31,7 +24,6 @@
     "@types/express": "^4.17.20",
     "@types/node": "^20.8.0",
     "@types/ws": "^8.5.6",
-    "concurrently": "^8.2.2",
     "node-gyp": "^10.0.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
