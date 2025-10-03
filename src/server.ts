@@ -425,15 +425,18 @@ class InformatorServer {
 
     private handleFrameData(clientId: string, data: Buffer): void {
         const client = this.clients.get(clientId);
-        if (!client || client.type !== 'capture_client') return;
+        if (!client) return;
+
+        // Дозволяємо відправку кадрів від capture_client або viewer (для тестування)
+        if (client.type !== 'capture_client' && client.type !== 'viewer') return;
 
         client.metrics.framesReceived++;
         client.metrics.bytesReceived += data.length;
 
-        // Розсилаємо кадр всім viewers
+        // Розсилаємо кадр всім viewers (окрім відправника)
         this.broadcastFrame(data, clientId);
 
-        logger.debug(`Frame received: ${data.length} bytes, broadcasting to ${this.captureSession.viewers.size} viewers`);
+        logger.info(`Frame received from ${client.type} ${clientId}: ${data.length} bytes, broadcasting to ${this.captureSession.viewers.size} viewers`);
     }
 
     private broadcastFrame(data: Buffer, excludeClientId?: string): void {
