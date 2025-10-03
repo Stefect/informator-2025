@@ -28,12 +28,21 @@ if (!fs.existsSync('./logs')) {
     fs.mkdirSync('./logs', { recursive: true });
 }
 
+interface UserInfo {
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    quality: string;
+    frameRate: number;
+}
+
 interface ClientConnection {
     id: string;
     ws: WebSocket;
     type: 'viewer' | 'capture_client';
     connectedAt: Date;
     lastActivity: Date;
+    userInfo?: UserInfo; // Додаємо інформацію про користувача
     metrics: {
         framesReceived: number;
         framesSent: number;
@@ -222,7 +231,15 @@ class InformatorServer {
                     break;
 
                 case 'viewer_join':
-                    this.handleViewerJoin(clientId);
+                    this.handleViewerJoin(clientId, message.user);
+                    break;
+
+                case 'update_preferences':
+                    this.handleUpdatePreferences(clientId, message.preferences);
+                    break;
+
+                case 'chat_message':
+                    this.handleChatMessage(clientId, message);
                     break;
 
                 case 'request_capture_start':
@@ -268,14 +285,21 @@ class InformatorServer {
         }
     }
 
-    private handleViewerJoin(clientId: string): void {
+    private handleViewerJoin(clientId: string, userInfo?: UserInfo): void {
         const client = this.clients.get(clientId);
         if (!client) return;
 
         client.type = 'viewer';
-        this.captureSession.viewers.add(clientId);
         
-        logger.info(`Viewer joined: ${clientId}. Total viewers: ${this.captureSession.viewers.size}`);
+        // Зберігаємо інформацію про користувача
+        if (userInfo) {
+            client.userInfo = userInfo;
+            logger.info(`Viewer joined: ${clientId} - ${userInfo.fullName} (${userInfo.quality}, ${userInfo.frameRate} FPS). Total viewers: ${this.captureSession.viewers.size + 1}`);
+        } else {
+            logger.info(`Viewer joined: ${clientId}. Total viewers: ${this.captureSession.viewers.size + 1}`);
+        }
+
+        this.captureSession.viewers.add(clientId);
 
         // Автоматичний старт захоплення
         if (this.captureSession.config.autoStart && 
@@ -290,6 +314,98 @@ class InformatorServer {
             isActive: this.captureSession.isActive,
             viewerCount: this.captureSession.viewers.size
         });
+
+        // Повідомляємо всіх viewers про нову кількість
+        this.broadcastViewerCount();
+
+        // Повідомляємо всіх про нового користувача
+        if (userInfo) {
+            this.broadcastToViewers({
+                type: 'user_joined',
+                username: userInfo.fullName
+            });
+        }
+
+        // Логуємо поточних viewers
+        this.logActiveViewers();
+    }
+
+    private broadcastViewerCount(): void {
+        const count = this.captureSession.viewers.size;
+        this.captureSession.viewers.forEach(viewerId => {
+            this.sendToClient(viewerId, {
+                type: 'viewer_update',
+                count: count
+            });
+        });
+    }
+
+    private broadcastToViewers(message: any): void {
+        this.captureSession.viewers.forEach(viewerId => {
+            this.sendToClient(viewerId, message);
+        });
+    }
+
+    private handleUpdatePreferences(clientId: string, preferences: any): void {
+        const client = this.clients.get(clientId);
+        if (!client) return;
+
+        // Оновлюємо інформацію про користувача
+        if (preferences) {
+            client.userInfo = {
+                firstName: preferences.firstName,
+                lastName: preferences.lastName,
+                fullName: `${preferences.firstName} ${preferences.lastName}`,
+                quality: preferences.quality,
+                frameRate: preferences.frameRate
+            };
+            
+            logger.info(`User preferences updated: ${clientId} - ${client.userInfo.fullName} (${client.userInfo.quality}, ${client.userInfo.frameRate} FPS)`);
+            
+            // Підтверджуємо оновлення
+            this.sendToClient(clientId, {
+                type: 'preferences_updated',
+                success: true
+            });
+        }
+    }
+
+    private handleChatMessage(clientId: string, message: any): void {
+        const client = this.clients.get(clientId);
+        if (!client) return;
+
+        const chatMessage = {
+            type: 'chat_message',
+            username: message.user?.fullName || 'Anonymous',
+            message: message.message,
+            timestamp: new Date().toISOString(),
+            clientId: clientId
+        };
+
+        logger.info(`Chat message from ${chatMessage.username}: ${message.message}`);
+
+        // Broadcast to all viewers (except sender)
+        this.captureSession.viewers.forEach(viewerId => {
+            if (viewerId !== clientId) {
+                this.sendToClient(viewerId, chatMessage);
+            }
+        });
+    }
+
+    private logActiveViewers(): void {
+        const viewers: string[] = [];
+        this.captureSession.viewers.forEach(viewerId => {
+            const client = this.clients.get(viewerId);
+            if (client && client.userInfo) {
+                viewers.push(`${client.userInfo.fullName} (${client.userInfo.quality})`);
+            } else {
+                viewers.push(`Anonymous-${viewerId.substring(0, 8)}`);
+            }
+        });
+        
+        if (viewers.length > 0) {
+            logger.info(`Active viewers (${viewers.length}): ${viewers.join(', ')}`);
+        }
     }
 
     private handleCaptureStartRequest(clientId: string): void {
@@ -415,6 +531,17 @@ class InformatorServer {
             logger.warn('Capture client disconnected - stopping capture');
         } else if (client.type === 'viewer') {
             this.captureSession.viewers.delete(clientId);
+            
+            // Повідомляємо інших про відключення
+            if (client.userInfo) {
+                this.broadcastToViewers({
+                    type: 'user_left',
+                    username: client.userInfo.fullName
+                });
+            }
+            
+            // Оновлюємо viewer count для всіх
+            this.broadcastViewerCount();
             
             // Зупиняємо захоплення якщо немає viewers
             if (this.captureSession.viewers.size === 0 && this.captureSession.isActive) {
