@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informator - Система захоплення екрану</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 50px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 40px;
+            color: white;
+            text-decoration: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .card-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .card p {
+            font-size: 16px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .card.host {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .card.viewer {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .features {
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .features h3 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            text-align: left;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .feature-item .icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .feature-item .text {
+            color: #666;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px;
+            }
+
+            h1 {
+                font-size: 36px;
+            }
+
+            .subtitle {
+                font-size: 16px;
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🖥️</div>
+        <h1>Informator</h1>
+        <p class="subtitle">Професійна система захоплення та трансляції екрану</p>
+
+        <div class="cards">
+            <a href="/host.html" class="card host">
+                <div class="card-icon">📡</div>
+                <h2>Host</h2>
+                <p>Розпочніть трансляцію свого екрану. Керуйте налаштуваннями FPS, якості та контролюйте підключення глядачів.</p>
+            </a>
+
+            <a href="/viewer.html" class="card viewer">
+                <div class="card-icon">👁️</div>
+                <h2>Viewer</h2>
+                <p>Підключіться до трансляції та переглядайте робочий стіл хоста в реальному часі з мінімальною затримкою.</p>
+            </a>
+        </div>
+
+        <div class="features">
+            <h3>✨ Можливості системи</h3>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <span class="icon">⚡</span>
+                    <span class="text">Висока швидкість трансляції до 60 FPS</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">🎯</span>
+                    <span class="text">Налаштування якості зображення</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">👥</span>
+                    <span class="text">Необмежена кількість глядачів</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">🔒</span>
+                    <span class="text">Безпечне WebSocket з'єднання</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">📊</span>
+                    <span class="text">Реальна статистика в реальному часі</span>
+                </div>
+                <div class="feature-item">
+                    <span class="icon">🌐</span>
+                    <span class="text">Підтримка віддаленого доступу</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
