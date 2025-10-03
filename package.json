@@ -9,9 +9,11 @@
     "build:all": "npm run build:native && npm run build",
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
+    "dev:server": "ts-node src/server.ts",
     "client": "ts-node src/capture-client.ts",
     "clean": "rmdir /s /q dist 2>nul || true",
-    "test": "node test/test-capture.js"
+    "test": "node test/test-capture.js",
+    "postinstall": "node -e \"if (process.platform === 'win32') { require('child_process').execSync('npm run build:native', {stdio: 'inherit'}) }\""
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -39,12 +41,5 @@
   "license": "MIT",
   "engines": {
     "node": ">=16.0.0"
-  },
-  "os": [
-    "win32"
-  ],
-  "cpu": [
-    "x64",
-    "ia32"
-  ]
+  }
 }
