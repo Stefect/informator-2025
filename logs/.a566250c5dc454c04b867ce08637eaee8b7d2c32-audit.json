@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 7
+    },
+    "auditLog": "C:\\Users\\arosl\\Downloads\\Informator (1)\\logs\\.a566250c5dc454c04b867ce08637eaee8b7d2c32-audit.json",
+    "files": [
+        {
+            "date": 1759736751502,
+            "name": "C:\\Users\\arosl\\Downloads\\Informator (1)\\logs\\debug-2025-10-06.log",
+            "hash": "03ae66ac2f33983a925f0c363a0c5307cceaceb7c188f5e5739e2867f9bb0b79"
+        }
+    ],
+    "hashType": "sha256"
+}

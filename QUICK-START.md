@@ -1,221 +1,94 @@
-# 🎯 Quick Start - capturestream.com
+# 🚀 Швидкий старт - Quick Start Guide
 
-## 🌐 Live URLs
+## ⚡ За 5 хвилин до першого стріму!
 
-### Для користувачів:
-- 🏠 **Головна сторінка**: http://capturestream.com/
-- 📺 **Режим стрімера**: http://capturestream.com/host.html
-- 👁️ **Режим глядача**: http://capturestream.com/viewer.html
+### 📋 Передумови
 
-### Для адміністраторів:
-- 📊 **Server Status**: http://capturestream.com/api/status
-- 📈 **Metrics**: http://capturestream.com/api/metrics
+1. **Node.js 18+** - [Завантажити](https://nodejs.org/)
+2. **FFmpeg** - [Інструкція](./RTMP-SETUP.md#1-️-встановіть-ffmpeg)
+3. **OBS Studio** (опційно) - [Завантажити](https://obsproject.com/)
 
 ---
 
-## 🚀 Deployment на capturestream.com
+## 🎬 Варіант 1: Browser Streaming (Найпростіший)
 
-### Перший раз (Initial Setup):
-
+### 1. Запустіть сервер
 ```bash
-# 1. SSH на сервер
-ssh user@your-server-ip
-
-# 2. Перейти в директорію
-cd /var/www/capturestream
-
-# 3. Клонувати проект (якщо ще не клоновано)
-git clone https://github.com/Stefect/informator-2025.git .
-
-# 4. Встановити залежності
-npm install
-
-# 5. Зкомпілювати
-npm run build
-
-# 6. Запустити з PM2
-pm2 start ecosystem.config.js
-pm2 save
-pm2 startup
-```
-
-### Оновлення (Updates):
-
-```bash
-# Просто запустіть deploy скрипт
-./deploy.sh
-```
-
-Або вручну:
-```bash
-git pull origin main
 npm install
 npm run build
-pm2 restart informator-capturestream
+npm start
+```
+
+### 2. Відкрийте браузер
+```
+http://localhost:3001
+```
+
+### 3. Натисніть "Створити стрім"
+- Введіть ім'я та прізвище
+- Натисніть "Почати трансляцію"
+- Виберіть екран для захоплення
+- ✅ Готово! Ваш стрім живе!
+
+### 4. Перегляд
+- Відкрийте в іншій вкладці: `http://localhost:3001`
+- Ваш стрім з'явиться на головній!
+
+---
+
+## 📹 Варіант 2: OBS Studio (Професійний)
+
+### 1. Запустіть ОБА сервера
+```bash
+npm run start:all
+```
+
+Ви побачите:
+```
+✅ WebSocket Server: http://localhost:3001
+✅ RTMP Server: rtmp://localhost:1935/live
+```
+
+### 2. Налаштуйте OBS
+
+**Settings → Stream:**
+- **Server:** `rtmp://localhost:1935/live`
+- **Stream Key:** `my_stream` (будь-яка назва)
+
+**Settings → Output:**
+- **Encoder:** `x264`
+- **Bitrate:** `2500 Kbps`
+- **Keyframe Interval:** `2`
+
+### 3. Додайте джерела в OBS
+- ➕ Display Capture (захоплення екрану)
+- ➕ Audio Input Capture (мікрофон)
+- ➕ Browser Source (для оверлеїв)
+
+### 4. Почніть трансляцію
+- Натисніть "Start Streaming" в OBS
+- Чекайте 10-15 секунд (HLS конвертація)
+
+### 5. Перегляд в браузері
+```
+http://localhost:8000/live/my_stream/index.m3u8
 ```
 
 ---
 
-## 📋 Швидкі команди
+## 📊 Корисні команди
 
-### PM2 Управління:
+### Перевірка статусу
 ```bash
-# Статус
-pm2 status
-
-# Перезапуск
-pm2 restart informator-capturestream
-
-# Зупинка
-pm2 stop informator-capturestream
-
-# Логи
-pm2 logs informator-capturestream
-
-# Моніторинг
-pm2 monit
-```
-
-### Nginx:
-```bash
-# Тест конфігурації
-sudo nginx -t
-
-# Перезавантаження
-sudo systemctl reload nginx
-
-# Статус
-sudo systemctl status nginx
-
-# Логи
-sudo tail -f /var/log/nginx/capturestream_access.log
-```
-
-### Git:
-```bash
-# Поточний статус
-git status
-
-# Останні зміни
-git log --oneline -10
-
-# Скинути до останнього коміту
-git reset --hard origin/main
-```
-
----
-
-## 🔍 Troubleshooting
-
-### Сайт не відповідає:
-```bash
-# Перевірити PM2
-pm2 status informator-capturestream
-pm2 logs informator-capturestream --lines 50
-
-# Перевірити Nginx
-sudo nginx -t
-sudo systemctl status nginx
-
-# Перевірити порт
-sudo lsof -i :3001
-```
-
-### WebSocket не підключається:
-```bash
-# Перевірити firewall
-sudo ufw status
-
-# Перевірити Nginx WebSocket конфігурацію
-sudo nano /etc/nginx/sites-available/capturestream
-
-# Тест WebSocket
-wscat -c ws://capturestream.com
-```
-
-### Оновлення не застосовуються:
-```bash
-# Жорсткий reset
-cd /var/www/capturestream
-git fetch origin
-git reset --hard origin/main
-git pull origin main
-npm install
-npm run build
-pm2 restart informator-capturestream
-```
-
----
-
-## 📊 Моніторинг
-
-### Системні ресурси:
-```bash
-# CPU та Memory
-htop
-
-# Дисковий простір
-df -h
-
-# Мережа
-iftop
-```
-
-### Application метрики:
-```bash
-# PM2 метрики
-pm2 monit
-
-# Логи в реальному часі
-pm2 logs informator-capturestream --lines 0
-
-# Application stats
 curl http://localhost:3001/api/status
 ```
 
----
-
-## 🎯 Checklist для go-live
-
-### Before deployment:
-- [ ] Код протестовано локально
-- [ ] Всі тести пройшли успішно
-- [ ] Версія оновлена в package.json
-- [ ] Зміни закоміченні в git
-- [ ] README оновлений
-
-### During deployment:
-- [ ] Backup поточної версії зроблено
-- [ ] Git pull успішний
-- [ ] npm install без помилок
-- [ ] TypeScript компіляція успішна
-- [ ] PM2 перезапустився
-
-### After deployment:
-- [ ] Сайт відкривається http://capturestream.com/
-- [ ] Host interface працює
-- [ ] Viewer interface працює
-- [ ] WebSocket підключається
-- [ ] Логи чисті (немає помилок)
-- [ ] Performance нормальний
+### Перегляд логів
+```bash
+tail -f logs/rtmp.log
+tail -f logs/combined.log
+```
 
 ---
 
-## 📞 Контакти
-
-### Production сервер:
-- **Domain**: capturestream.com
-- **Server IP**: [YOUR-SERVER-IP]
-- **SSH User**: [YOUR-USERNAME]
-
-### Repository:
-- **GitHub**: https://github.com/Stefect/informator-2025
-- **Branch**: main
-
----
-
-## 🎉 Готово!
-
-Ваш CaptureStream тепер live на **http://capturestream.com/**!
-
-Для оновлень просто запускайте: `./deploy.sh` 🚀
+**Успіхів зі стрімингом! 🚀📹**

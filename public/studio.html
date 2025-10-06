@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Студія - CaptureStream</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" href="/favicon.ico">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-btn" onclick="window.location.href='/'">←</button>
+            <a href="/" class="logo">
+                <span class="logo-icon">📺</span>
+                <span>CaptureStream Studio</span>
+            </a>
+        </div>
+        
+        <div class="header-right">
+            <div class="status-indicator" id="statusIndicator">
+                <span class="status-dot"></span>
+                <span id="statusText">Офлайн</span>
+            </div>
+            <button class="header-icon-btn" title="Повернутися">🏠</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content expanded">
+        <div class="studio-container">
+            <div class="studio-header">
+                <h1 class="studio-title">Студія трансляцій</h1>
+                <p class="studio-subtitle">Керуйте своєю трансляцією в реальному часі</p>
+            </div>
+
+            <div class="studio-content">
+                <!-- Preview -->
+                <div class="preview-container">
+                    <h3 style="margin-bottom: 16px;">Попередній перегляд</h3>
+                    <canvas id="previewCanvas" class="preview-screen"></canvas>
+                    
+                    <div class="stream-controls">
+                        <button class="primary-btn" id="startStreamBtn">
+                            🔴 Почати трансляцію
+                        </button>
+                        <button class="secondary-btn" id="testBtn">
+                            🖥️ Тест захоплення
+                        </button>
+                    </div>
+
+                    <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--yt-border);">
+                        <h4 style="margin-bottom: 12px;">Статистика трансляції</h4>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-value" id="viewerCount">0</div>
+                                <div class="stat-label">Глядачів</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="fpsValue">0</div>
+                                <div class="stat-label">FPS</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="bitrateValue">0</div>
+                                <div class="stat-label">Кб/с</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="durationValue">00:00:00</div>
+                                <div class="stat-label">Тривалість</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="settings-panel">
+                    <h3 style="margin-bottom: 20px;">Налаштування</h3>
+
+                    <div class="settings-section">
+                        <h4 class="settings-section-title">Інформація про стрім</h4>
+                        <div class="settings-item">
+                            <label class="settings-label">Ім'я</label>
+                            <input type="text" class="settings-input" id="firstName" placeholder="Ваше ім'я">
+                        </div>
+                        <div class="settings-item">
+                            <label class="settings-label">Прізвище</label>
+                            <input type="text" class="settings-input" id="lastName" placeholder="Ваше прізвище">
+                        </div>
+                        <div class="settings-item">
+                            <label class="settings-label">Назва трансляції</label>
+                            <input type="text" class="settings-input" id="streamTitle" placeholder="Моя трансляція">
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h4 class="settings-section-title">Якість</h4>
+                        <div class="settings-item">
+                            <label class="settings-label">Роздільна здатність</label>
+                            <select class="settings-select" id="qualitySelect">
+                                <option value="high">Висока (1080p)</option>
+                                <option value="medium" selected>Середня (720p)</option>
+                                <option value="low">Низька (480p)</option>
+                            </select>
+                        </div>
+                        <div class="settings-item">
+                            <label class="settings-label">Частота кадрів</label>
+                            <select class="settings-select" id="fpsSelect">
+                                <option value="60">60 FPS</option>
+                                <option value="30" selected>30 FPS</option>
+                                <option value="24">24 FPS</option>
+                                <option value="15">15 FPS</option>
+                            </select>
+                        </div>
+                        <div class="settings-item">
+                            <label class="settings-label">Компресія JPEG</label>
+                            <input type="range" min="50" max="100" value="85" class="settings-input" id="jpegQuality" 
+                                   style="padding: 0; height: 8px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--yt-text-secondary); margin-top: 4px;">
+                                <span>50%</span>
+                                <span id="jpegQualityValue">85%</span>
+                                <span>100%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h4 class="settings-section-title">Підключення</h4>
+                        <div class="settings-item">
+                            <label class="settings-label">Статус сервера</label>
+                            <div style="display: flex; align-items: center; gap: 8px; padding: 12px; background-color: var(--yt-bg-tertiary); border-radius: 8px;">
+                                <span id="connectionStatus">🔴 Відключено</span>
+                            </div>
+                        </div>
+                        <div class="settings-item">
+                            <label class="settings-label">URL трансляції</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" class="settings-input" id="streamUrl" readonly 
+                                       style="flex: 1; font-size: 12px; background-color: var(--yt-bg-primary);">
+                                <button class="secondary-btn" id="copyUrlBtn" style="padding: 10px 16px;">
+                                    📋
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section" style="border-bottom: none;">
+                        <button class="secondary-btn" style="width: 100%;" onclick="window.location.href='/'">
+                            ← Повернутися на головну
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/studio.js"></script>
+</body>
+</html>

@@ -1,32 +1,12 @@
+import 'dotenv/config';
 import express from 'express';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createServer } from 'http';
 import path from 'path';
-import * as winston from 'winston';
 import * as fs from 'fs';
-
-// Налаштування логування
-const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.errors({ stack: true }),
-        winston.format.json()
-    ),
-    defaultMeta: { service: 'informator-server' },
-    transports: [
-        new winston.transports.File({ filename: './logs/error.log', level: 'error' }),
-        new winston.transports.File({ filename: './logs/combined.log' }),
-        new winston.transports.Console({
-            format: winston.format.simple()
-        })
-    ]
-});
-
-// Створюємо папку для логів
-if (!fs.existsSync('./logs')) {
-    fs.mkdirSync('./logs', { recursive: true });
-}
+import { connectDatabase } from './database/connection';
+import { Stream, IStream } from './database/models';
+import { logger, log, websocketLogger, requestLogger } from './logger';
 
 interface UserInfo {
     firstName: string;
@@ -93,6 +73,85 @@ class InformatorServer {
         this.setupGracefulShutdown();
     }
 
+    // Database methods
+    private async createStreamInDB(clientId: string, userInfo: any): Promise<IStream | null> {
+        try {
+            const stream = new Stream({
+                streamId: clientId,
+                title: userInfo.streamTitle || `${userInfo.fullName} - Live`,
+                description: userInfo.streamDescription || '',
+                streamer: {
+                    id: clientId,
+                    username: userInfo.fullName || 'Unknown',
+                    avatar: userInfo.avatar
+                },
+                status: 'live',
+                startTime: new Date(),
+                quality: {
+                    resolution: userInfo.resolution || '1920x1080',
+                    fps: userInfo.frameRate || 30,
+                    bitrate: 2500
+                },
+                metadata: {
+                    serverVersion: '2.0.0',
+                    captureSource: userInfo.captureSource || 'browser',
+                    encoding: 'h264'
+                }
+            });
+
+            await stream.save();
+            log.streamStart(`Stream created in DB: ${stream.title}`, {
+                streamId: stream.streamId,
+                streamer: stream.streamer.username
+            });
+
+            return stream;
+        } catch (error) {
+            log.error('Failed to create stream in DB', { error, clientId });
+            return null;
+        }
+    }
+
+    private async updateStreamViewers(streamId: string, viewerCount: number): Promise<void> {
+        try {
+            const stream = await Stream.findOne({ streamId, status: 'live' });
+            if (stream) {
+                stream.updateViewers(viewerCount);
+                await stream.save();
+            }
+        } catch (error) {
+            log.error('Failed to update stream viewers', { error, streamId });
+        }
+    }
+
+    private async endStreamInDB(streamId: string): Promise<void> {
+        try {
+            const stream = await Stream.findOne({ streamId, status: 'live' });
+            if (stream) {
+                stream.endStream();
+                await stream.save();
+                log.streamEnd(`Stream ended: ${stream.title}`, {
+                    streamId: stream.streamId,
+                    duration: stream.duration,
+                    peakViewers: stream.peakViewers
+                });
+            }
+        } catch (error) {
+            log.error('Failed to end stream in DB', { error, streamId });
+        }
+    }
+
+    private async getActiveStreamsFromDB(): Promise<IStream[]> {
+        try {
+            return await Stream.find({ status: 'live' })
+                .sort({ startTime: -1 })
+                .limit(50);
+        } catch (error) {
+            log.error('Failed to get active streams from DB', { error });
+            return [];
+        }
+    }
+
     private setupExpress(): void {
         // CORS headers для remote access
         this.app.use((req, res, next) => {
@@ -107,8 +166,8 @@ class InformatorServer {
             }
         });
 
-        // Статичні файли
-        this.app.use(express.static(path.join(__dirname, '..')));
+        // Статичні файли з папки public
+        this.app.use(express.static(path.join(__dirname, '..', 'public')));
         this.app.use(express.json());
 
         // API endpoints
@@ -224,6 +283,30 @@ class InformatorServer {
                         type: 'pong', 
                         timestamp: new Date().toISOString() 
                     });
+                    break;
+
+                case 'register':
+                    this.handleRegister(clientId, message);
+                    break;
+
+                case 'getStreams':
+                    this.handleGetStreams(clientId);
+                    break;
+
+                case 'getStreamInfo':
+                    this.handleGetStreamInfo(clientId, message);
+                    break;
+
+                case 'start_native_capture':
+                    this.handleStartNativeCapture(clientId, message);
+                    break;
+
+                case 'stop_native_capture':
+                    this.handleStopNativeCapture(clientId);
+                    break;
+
+                case 'test_capture':
+                    this.handleTestCapture(clientId, message);
                     break;
 
                 case 'client_ready':
@@ -640,7 +723,148 @@ class InformatorServer {
         process.on('SIGTERM', shutdown);
     }
 
-    public start(): void {
+    // New YouTube-style API handlers
+    private async handleRegister(clientId: string, message: any): Promise<void> {
+        const client = this.clients.get(clientId);
+        if (!client) return;
+
+        const role = message.role || 'viewer';
+        
+        // Handle different roles
+        if (role === 'capture_client' || role === 'streamer') {
+            client.type = 'capture_client';
+            
+            // Update user info
+            if (message.userInfo) {
+                client.userInfo = message.userInfo;
+                log.streamStart(`Streamer registered: ${message.userInfo.fullName}`, {
+                    streamTitle: message.userInfo.streamTitle || 'Трансляція',
+                    quality: message.userInfo.quality,
+                    fps: message.userInfo.frameRate
+                });
+            }
+
+            // Set as active capture client
+            if (this.captureSession.captureClient) {
+                log.warn(`Capture client already exists, replacing with ${clientId}`);
+            }
+            
+            this.captureSession.captureClient = client;
+            this.captureSession.isActive = true;
+            this.captureSession.startedAt = new Date();
+            
+            // Save stream to database
+            await this.createStreamInDB(clientId, message.userInfo || {});
+            
+            // Notify all viewers
+            this.broadcastToViewers({
+                type: 'capture_started',
+                timestamp: new Date().toISOString(),
+                streamer: message.userInfo
+            });
+            
+        } else {
+            // Viewer
+            client.type = 'viewer';
+            this.captureSession.viewers.add(clientId);
+            await this.updateStreamViewers(
+                this.captureSession.captureClient?.id || '',
+                this.captureSession.viewers.size
+            );
+            this.broadcastViewerCount();
+            log.connect(`Viewer registered: ${clientId}. Total: ${this.captureSession.viewers.size}`);
+        }
+
+        // Send confirmation
+        this.sendToClient(clientId, {
+            type: 'registered',
+            role: client.type,
+            clientId: clientId,
+            isStreaming: this.captureSession.isActive
+        });
+    }
+
+    private handleGetStreams(clientId: string): void {
+        const streams: any[] = [];
+
+        if (this.captureSession.isActive && this.captureSession.captureClient) {
+            const client = this.captureSession.captureClient;
+            streams.push({
+                id: client.id,
+                streamerName: client.userInfo?.fullName || 'Стрімер',
+                title: client.userInfo?.fullName ? `${client.userInfo.fullName} - Трансляція` : 'Трансляція',
+                viewers: this.captureSession.viewers.size,
+                startTime: this.captureSession.startedAt?.getTime(),
+                quality: client.userInfo?.quality,
+                fps: client.userInfo?.frameRate
+            });
+        }
+
+        this.sendToClient(clientId, {
+            type: 'streamList',
+            streams: streams
+        });
+    }
+
+    private handleGetStreamInfo(clientId: string, message: any): void {
+        const streamId = message.streamId;
+
+        if (this.captureSession.captureClient && this.captureSession.captureClient.id === streamId) {
+            const client = this.captureSession.captureClient;
+            this.sendToClient(clientId, {
+                type: 'streamInfo',
+                info: {
+                    id: client.id,
+                    streamerName: client.userInfo?.fullName || 'Стрімер',
+                    title: client.userInfo?.fullName ? `${client.userInfo.fullName} - Трансляція` : 'Трансляція',
+                    startTime: this.captureSession.startedAt?.getTime(),
+                    streamQuality: client.userInfo?.quality,
+                    fps: client.userInfo?.frameRate
+                }
+            });
+        } else {
+            this.sendToClient(clientId, {
+                type: 'streamInfo',
+                info: null
+            });
+        }
+    }
+
+    private handleStartNativeCapture(clientId: string, message: any): void {
+        logger.info(`Native capture start requested by ${clientId}`);
+        
+        // This would integrate with the C++ screen capture module
+        // For now, just acknowledge
+        this.sendToClient(clientId, {
+            type: 'native_capture_started',
+            config: message.config
+        });
+
+        this.captureSession.isActive = true;
+        this.captureSession.startedAt = new Date();
+    }
+
+    private handleStopNativeCapture(clientId: string): void {
+        logger.info(`Native capture stop requested by ${clientId}`);
+        
+        this.captureSession.isActive = false;
+        this.captureSession.startedAt = null;
+    }
+
+    private handleTestCapture(clientId: string, message: any): void {
+        logger.info(`Test capture requested by ${clientId}`, message.config);
+        
+        // Send test acknowledgement
+        this.sendToClient(clientId, {
+            type: 'test_capture_ack',
+            config: message.config
+        });
+    }
+
+    public async start(): Promise<void> {
+        // Connect to MongoDB first
+        await connectDatabase();
+        
         const host = process.env.HOST || '0.0.0.0'; // Слухаємо на всіх інтерфейсах
         
         this.server.listen(this.port, host, () => {
@@ -658,26 +882,35 @@ class InformatorServer {
             });
 
             const primaryIP = localIPs[0] || 'localhost';
+            const domain = process.env.DOMAIN || 'capturestream.com';
+            const publicUrl = process.env.PUBLIC_URL || `http://${domain}`;
             
-            logger.info(`
+            log.start(`
 ╔══════════════════════════════════════╗
-║      🖥️  INFORMATOR SERVER v2.0      ║
+║   🖥️  CAPTURESTREAM SERVER v2.0     ║
 ║                                      ║
-║  🌐 Local: http://localhost:${this.port}       ║
-║  🌍 Remote: http://${primaryIP}:${this.port}     ║
-║  🔌 WebSocket: ws://${primaryIP}:${this.port}    ║
-║  📊 API: http://${primaryIP}:${this.port}/api    ║
+║  🌐 Production: ${publicUrl}  ║
+║  🏠 Local: http://localhost:${this.port}       ║
+║  🌍 Network: http://${primaryIP}:${this.port}     ║
+║  🔌 WebSocket: ws://${domain}:${this.port}    ║
+║  📊 API: ${publicUrl}/api    ║
 ║                                      ║
-║  📊 Status: READY                    ║
-║  🎯 Mode: Smart Capture Management   ║
+║  📊 Status: READY ✅                 ║
+║  🎯 Mode: YouTube Live Clone         ║
 ║  ⚡ Remote Access Enabled            ║
+║  💾 MongoDB: Connected               ║
 ╚══════════════════════════════════════╝
 
-🔗 Підключення з інших пристроїв:
-   Введіть в браузері: http://${primaryIP}:${this.port}
+🌐 Production URLs:
+   Main:      ${publicUrl}
+   Studio:    ${publicUrl}/studio.html
+   Watch:     ${publicUrl}/watch.html
    
-📱 Мобільні пристрої: Увімкніть мобільний hotspot або 
-   підключіться до тієї ж Wi-Fi мережі
+🔗 Local Access:
+   http://localhost:${this.port}
+   http://${primaryIP}:${this.port}
+   
+📱 Mobile: Підключіться до тієї ж Wi-Fi мережі
             `);
         });
     }
@@ -687,7 +920,10 @@ class InformatorServer {
 if (require.main === module) {
     const port = process.env.PORT ? parseInt(process.env.PORT) : 3001;
     const server = new InformatorServer(port);
-    server.start();
+    server.start().catch((error) => {
+        log.error('Failed to start server', { error });
+        process.exit(1);
+    });
 }
 
 export default InformatorServer;
