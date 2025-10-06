@@ -1,10 +1,23 @@
-# 🖥️ Informator - Система захоплення екрану
+<div align="center">
 
-**Informator** - це потужний інструмент для захоплення та трансляції робочого столу в реальному часі через веб-браузер.
+# 🖥️ CaptureStream
 
-🌐 **Live Demo**: [http://capturestream.com/](http://capturestream.com/)
+### Професійна система захоплення та трансляції екрану в реальному часі
 
-🔗 **Офіційний домен**: capturestream.com
+[![Live Demo](https://img.shields.io/badge/Live-capturestream.com-blue?style=for-the-badge)](http://capturestream.com/)
+[![GitHub](https://img.shields.io/badge/GitHub-informator--2025-181717?style=for-the-badge&logo=github)](https://github.com/Stefect/informator-2025)
+[![Node](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.2-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+
+[🚀 Live Demo](http://capturestream.com/) | [📺 Стрімер](http://capturestream.com/host.html) | [👁️ Глядач](http://capturestream.com/viewer.html) | [📖 Документація](./DEPLOYMENT-GUIDE.md)
+
+---
+
+</div>
+
+## 🌟 Про проект
+
+**CaptureStream** (Informator) - це потужний інструмент для захоплення та трансляції робочого столу в реальному часі через веб-браузер. Повністю безкоштовний та open-source.
 
 ## 🎯 Основні можливості
 
