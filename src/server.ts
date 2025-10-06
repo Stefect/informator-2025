@@ -147,7 +147,7 @@ class InformatorServer {
             res.json({ success: true, config: this.captureSession.config });
         });
 
-        // Головна сторінка
+        // Головна сторінка з вибором
         this.app.get('/', (req, res) => {
             res.sendFile(path.join(__dirname, '..', 'index.html'));
         });
