@@ -2,7 +2,9 @@
 
 **Informator** - це потужний інструмент для захоплення та трансляції робочого столу в реальному часі через веб-браузер.
 
-🌐 **Live Demo**: [https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/](https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/)
+🌐 **Live Demo**: [http://capturestream.com/](http://capturestream.com/)
+
+🔗 **Офіційний домен**: capturestream.com
 
 ## 🎯 Основні можливості
 
@@ -16,15 +18,15 @@
 
 ## 🚀 Швидкий старт
 
-### 🌐 GitHub Codespaces (Рекомендовано)
+### 🌐 Онлайн версія (Рекомендовано)
 
-**Найпростіший спосіб** - використати готовий Codespace:
+**Найпростіший спосіб** - використати онлайн версію:
 
-1. **Відкрийте Live Demo**: [https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/](https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/)
+1. **Головна сторінка**: [http://capturestream.com/](http://capturestream.com/)
 
-2. **Для стрімера**: [https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/host.html](https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/host.html)
+2. **Для стрімера**: [http://capturestream.com/host.html](http://capturestream.com/host.html)
 
-3. **Для глядачів**: [https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/viewer.html](https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/viewer.html)
+3. **Для глядачів**: [http://capturestream.com/viewer.html](http://capturestream.com/viewer.html)
 
 ### 💻 Локальна установка
 

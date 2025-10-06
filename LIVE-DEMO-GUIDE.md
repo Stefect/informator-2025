@@ -1,25 +1,28 @@
-# 🌐 Informator Live Demo - Інструкція користування
+# 🌐 CaptureStream - Інструкція користування
 
 ## 🔗 Прямі посилання
 
+### 🏠 **Головна сторінка**
+[http://capturestream.com/](http://capturestream.com/)
+
 ### 📺 **Для стрімера (Host)**
-[https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/host.html](https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/host.html)
+[http://capturestream.com/host.html](http://capturestream.com/host.html)
 
 ### 👁️ **Для глядачів (Viewer)**
-[https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/viewer.html](https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/viewer.html)
+[http://capturestream.com/viewer.html](http://capturestream.com/viewer.html)
 
 ---
 
 ## 🎮 Як користуватися
 
 ### Для стрімера:
-1. Відкрийте [Host Interface](https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/host.html)
+1. Відкрийте [Host Interface](http://capturestream.com/host.html)
 2. Налаштуйте якість та FPS
 3. Натисніть "Почати стрім"
 4. Поділіться посиланням на Viewer з друзями
 
 ### Для глядачів:
-1. Відкрийте [Viewer Interface](https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/viewer.html)
+1. Відкрийте [Viewer Interface](http://capturestream.com/viewer.html)
 2. Насолоджуйтеся live відео!
 3. Використовуйте чат для спілкування
 
@@ -116,9 +119,10 @@
 
 ```
 🎮 Дивіться мій live стрім!
-👁️ Глядачі: https://musical-doodle-jjrppp4x7gr9hpg5w.github.dev/viewer.html
+👁️ Глядачі: http://capturestream.com/viewer.html
 
 Працює на будь-якому пристрої! 📱💻🖥️
+Офіційний сайт: capturestream.com
 ```
 
 ---
