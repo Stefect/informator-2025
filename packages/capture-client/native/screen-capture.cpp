@@ -36,14 +36,10 @@ bool ScreenCapture::Initialize(int width, int height) {
         return false;
     }
 
-    // Встановити розміри
-    if (width > 0 && height > 0) {
-        width_ = width;
-        height_ = height;
-    } else {
-        width_ = desktop_width_;
-        height_ = desktop_height_;
-    }
+    // ВИПРАВЛЕННЯ: Завжди захоплювати весь екран (ігнорувати width/height параметри)
+    // Це вирішує проблему з обрізкою та світлою картинкою
+    width_ = desktop_width_;
+    height_ = desktop_height_;
 
     // Створити staging texture для копіювання з GPU
     if (!CreateStagingTexture()) {
@@ -213,24 +209,8 @@ bool ScreenCapture::CaptureFrame(std::vector<uint8_t>& frameData) {
     }
 
     // Скопіювати в staging texture
-    if (width_ == desktop_width_ && height_ == desktop_height_) {
-        // Копіювати весь екран
-        d3d_context_->CopyResource(staging_texture_, desktop_texture);
-    } else {
-        // Копіювати з масштабуванням (використати Box для обрізки)
-        D3D11_BOX source_box;
-        source_box.left = 0;
-        source_box.right = width_;
-        source_box.top = 0;
-        source_box.bottom = height_;
-        source_box.front = 0;
-        source_box.back = 1;
-        
-        d3d_context_->CopySubresourceRegion(
-            staging_texture_, 0, 0, 0, 0,
-            desktop_texture, 0, &source_box
-        );
-    }
+    // ВИПРАВЛЕННЯ: Завжди копіювати весь екран, не обрізати
+    d3d_context_->CopyResource(staging_texture_, desktop_texture);
 
     desktop_texture->Release();
 
