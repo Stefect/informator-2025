@@ -96,14 +96,8 @@ export class StreamManager extends EventEmitter {
     public addViewer(streamId: string, viewerId: string): boolean {
         const stream = this.streams.get(streamId);
         if (stream) {
-            // Перевірка ліміту глядачів
-            if (stream.viewerIds.size >= STREAM_CONFIG.MAX_VIEWERS_PER_STREAM) {
-                logger.warn(`⚠️ Досягнуто ліміт глядачів (${STREAM_CONFIG.MAX_VIEWERS_PER_STREAM}) для потоку ${streamId}`);
-                return false;
-            }
-            
             stream.viewerIds.add(viewerId);
-            logger.info(`👁️ Глядач ${viewerId} підключився до потоку ${streamId} (${stream.viewerIds.size}/${STREAM_CONFIG.MAX_VIEWERS_PER_STREAM})`);
+            logger.info(`👁️ Глядач ${viewerId} підключився до потоку ${streamId} (глядачів: ${stream.viewerIds.size})`);
             this.emit('viewer_added', { streamId, viewerId });
             return true;
         }

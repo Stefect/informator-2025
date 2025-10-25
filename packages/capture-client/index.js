@@ -32,15 +32,15 @@ function initializeCapture() {
         console.log('🚀 Ініціалізація захоплення екрану (БЕЗ енкодера)...');
         
         const result = nativeCapture.initialize({
-            width: 1280, // Зменшимо розмір для меншого трафіку
+            width: 1280,
             height: 720,
-            fps: 5,
+            fps: 30, // Збільшено до 30 FPS
             bitrate: 0, // Не використовувати енкодер
             useHardware: false
         });
 
         if (result.success) {
-            console.log(`✅ Захоплення ініціалізовано: ${result.width}x${result.height}`);
+            console.log(`✅ Захоплення ініціалізовано: ${result.width}x${result.height} @ 30 FPS`);
             isInitialized = true;
             return true;
         } else {
@@ -139,13 +139,13 @@ function startCapture() {
         return;
     }
     
-    console.log('▶️ Починаємо захоплення екрану (5 FPS)...');
+    console.log('▶️ Починаємо захоплення екрану (30 FPS)...');
     frameNumber = 0;
     
-    // Захоплювати кадри з частотою 5 FPS
+    // Захоплювати кадри з частотою 30 FPS
     captureInterval = setInterval(() => {
         captureAndSendFrame();
-    }, 200); // 200ms = 5 FPS
+    }, 33); // ~33ms = 30 FPS
 }
 
 function stopCapture() {

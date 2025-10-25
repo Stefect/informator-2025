@@ -50,7 +50,7 @@ export const JPEG_CONFIG = {
 } as const;
 
 export const STREAM_CONFIG = {
-  MAX_VIEWERS_PER_STREAM: 100,
+  MAX_VIEWERS_PER_STREAM: Infinity, // Без обмежень
   HEARTBEAT_INTERVAL: 30000, // 30 seconds
   FRAME_TIMEOUT: 5000, // 5 seconds
 } as const;
