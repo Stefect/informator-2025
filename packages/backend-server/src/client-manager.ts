@@ -4,8 +4,10 @@
 
 import WebSocket from 'ws';
 import { logger } from './logger';
+import { CLIENT_TYPES } from './constants';
+import { generateId } from './utils';
 
-export type ClientType = 'capture_client' | 'viewer' | 'unknown';
+export type ClientType = typeof CLIENT_TYPES.CAPTURE | typeof CLIENT_TYPES.VIEWER | typeof CLIENT_TYPES.UNKNOWN;
 
 export interface ClientInfo {
     id: string;
@@ -18,14 +20,13 @@ export interface ClientInfo {
 
 export class ClientManager {
     private clients = new Map<string, ClientInfo>();
-    private clientIdCounter = 0;
 
     constructor() {
         logger.info('👥 ClientManager ініціалізовано');
     }
 
-    public addClient(ws: WebSocket, type: ClientType = 'unknown'): string {
-        const clientId = this.generateClientId();
+    public addClient(ws: WebSocket, type: ClientType = CLIENT_TYPES.UNKNOWN): string {
+        const clientId = generateId('client');
         
         const clientInfo: ClientInfo = {
             id: clientId,
@@ -77,13 +78,13 @@ export class ClientManager {
 
     public getCaptureClients(): ClientInfo[] {
         return Array.from(this.clients.values()).filter(
-            client => client.type === 'capture_client'
+            client => client.type === CLIENT_TYPES.CAPTURE
         );
     }
 
     public getViewers(): ClientInfo[] {
         return Array.from(this.clients.values()).filter(
-            client => client.type === 'viewer'
+            client => client.type === CLIENT_TYPES.VIEWER
         );
     }
 
@@ -97,10 +98,6 @@ export class ClientManager {
 
     public getViewerCount(): number {
         return this.getViewers().length;
-    }
-
-    private generateClientId(): string {
-        return `client_${++this.clientIdCounter}_${Date.now()}`;
     }
 
     public getAllClients(): ClientInfo[] {

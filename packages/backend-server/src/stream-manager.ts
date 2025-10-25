@@ -5,6 +5,8 @@
 
 import { EventEmitter } from 'events';
 import { logger } from './logger';
+import { STREAM_CONFIG, FRAME_CODECS } from './constants';
+import { generateId } from './utils';
 
 export interface StreamInfo {
     streamId: string;
@@ -16,7 +18,7 @@ export interface StreamInfo {
         width: number;
         height: number;
         fps: number;
-        codec: string;
+        codec: typeof FRAME_CODECS.BGRA | typeof FRAME_CODECS.JPEG | typeof FRAME_CODECS.H264;
     };
     stats: {
         framesReceived: number;
@@ -46,7 +48,7 @@ export class StreamManager extends EventEmitter {
     }
 
     public createStream(captureClientId: string): string {
-        const streamId = this.generateStreamId();
+        const streamId = generateId('stream');
 
         const streamInfo: StreamInfo = {
             streamId,
@@ -94,8 +96,14 @@ export class StreamManager extends EventEmitter {
     public addViewer(streamId: string, viewerId: string): boolean {
         const stream = this.streams.get(streamId);
         if (stream) {
+            // Перевірка ліміту глядачів
+            if (stream.viewerIds.size >= STREAM_CONFIG.MAX_VIEWERS_PER_STREAM) {
+                logger.warn(`⚠️ Досягнуто ліміт глядачів (${STREAM_CONFIG.MAX_VIEWERS_PER_STREAM}) для потоку ${streamId}`);
+                return false;
+            }
+            
             stream.viewerIds.add(viewerId);
-            logger.info(`👁️ Глядач ${viewerId} підключився до потоку ${streamId}`);
+            logger.info(`👁️ Глядач ${viewerId} підключився до потоку ${streamId} (${stream.viewerIds.size}/${STREAM_CONFIG.MAX_VIEWERS_PER_STREAM})`);
             this.emit('viewer_added', { streamId, viewerId });
             return true;
         }
@@ -124,7 +132,7 @@ export class StreamManager extends EventEmitter {
                 width: metadata.width,
                 height: metadata.height,
                 fps: 0, // Розрахуємо окремо
-                codec: 'h264'
+                codec: FRAME_CODECS.JPEG
             };
         }
     }
@@ -161,10 +169,6 @@ export class StreamManager extends EventEmitter {
     public hasViewers(streamId: string): boolean {
         const stream = this.streams.get(streamId);
         return stream ? stream.viewerIds.size > 0 : false;
-    }
-
-    private generateStreamId(): string {
-        return `stream_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
 
     public getStreamStats(streamId: string): StreamInfo['stats'] | undefined {

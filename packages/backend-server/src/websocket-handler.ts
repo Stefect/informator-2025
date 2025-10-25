@@ -8,6 +8,9 @@ import { ClientManager, ClientType } from './client-manager';
 import { StreamManager, FrameMetadata } from './stream-manager';
 import { JPEGCompressor } from './jpeg-compressor';
 import { logger } from './logger';
+import { MESSAGE_TYPES, CLIENT_TYPES, ERRORS, JPEG_CONFIG, FRAME_CODECS } from './constants';
+import { isValidMessage, safeJSONParse, generateId, formatCompressionRatio } from './utils';
+import type { BaseMessage, ClientMessage } from './types';
 
 export class WebSocketHandler {
     private wss: WebSocketServer;
@@ -26,7 +29,10 @@ export class WebSocketHandler {
         this.wss = wss;
         this.streamManager = streamManager;
         this.clientManager = clientManager;
-        this.compressor = new JPEGCompressor({ quality: 75, chroma: '4:2:0' });
+        this.compressor = new JPEGCompressor({ 
+            quality: JPEG_CONFIG.QUALITY, 
+            chroma: JPEG_CONFIG.CHROMA_SUBSAMPLING 
+        });
 
         this.setupWebSocket();
         this.setupStreamEvents();
@@ -50,7 +56,7 @@ export class WebSocketHandler {
 
             // Відправка вітального повідомлення
             this.sendMessage(ws, {
-                type: 'welcome',
+                type: MESSAGE_TYPES.WELCOME,
                 clientId,
                 timestamp: Date.now()
             });
@@ -67,7 +73,7 @@ export class WebSocketHandler {
                 const captureClient = this.clientManager.getClient(stream.captureClientId);
                 if (captureClient) {
                     this.sendCommand(captureClient.ws, {
-                        type: 'stop_capture'
+                        type: MESSAGE_TYPES.STOP_CAPTURE
                     });
                 }
             }
@@ -81,7 +87,7 @@ export class WebSocketHandler {
                 const captureClient = this.clientManager.getClient(stream.captureClientId);
                 if (captureClient) {
                     this.sendCommand(captureClient.ws, {
-                        type: 'start_capture'
+                        type: MESSAGE_TYPES.START_CAPTURE
                     });
                 }
             }
@@ -122,26 +128,32 @@ export class WebSocketHandler {
     }
 
     private handleTextMessage(clientId: string, message: any): void {
+        // Валідація повідомлення
+        if (!isValidMessage(message)) {
+            logger.warn(`⚠️ Невалідне повідомлення від ${clientId}:`, message);
+            return;
+        }
+
         logger.info(`📥 Повідомлення від ${clientId}: ${message.type}`);
 
         switch (message.type) {
-            case 'identification':
+            case MESSAGE_TYPES.IDENTIFICATION:
                 this.handleIdentification(clientId, message);
                 break;
 
-            case 'frame_metadata':
+            case MESSAGE_TYPES.FRAME_METADATA:
                 this.handleFrameMetadata(clientId, message);
                 break;
 
-            case 'join_stream':
+            case MESSAGE_TYPES.JOIN_STREAM:
                 this.handleJoinStream(clientId, message);
                 break;
 
-            case 'heartbeat':
+            case MESSAGE_TYPES.HEARTBEAT:
                 this.handleHeartbeat(clientId, message);
                 break;
 
-            case 'metrics':
+            case MESSAGE_TYPES.METRICS:
                 this.handleMetrics(clientId, message);
                 break;
 
@@ -151,13 +163,13 @@ export class WebSocketHandler {
     }
 
     private handleIdentification(clientId: string, message: any): void {
-        const clientType: ClientType = message.clientType || 'unknown';
+        const clientType: ClientType = message.clientType || CLIENT_TYPES.UNKNOWN;
         this.clientManager.setClientType(clientId, clientType);
         this.clientManager.setClientMetadata(clientId, message);
 
         logger.info(`🆔 Клієнт ${clientId} ідентифіковано як: ${clientType}`);
 
-        if (clientType === 'capture_client') {
+        if (clientType === CLIENT_TYPES.CAPTURE) {
             // Створити потік для цього Capture Client
             const streamId = this.streamManager.createStream(clientId);
             
@@ -165,7 +177,7 @@ export class WebSocketHandler {
             const client = this.clientManager.getClient(clientId);
             if (client) {
                 this.sendMessage(client.ws, {
-                    type: 'stream_created',
+                    type: MESSAGE_TYPES.STREAM_CREATED,
                     streamId,
                     timestamp: Date.now()
                 });
@@ -213,7 +225,7 @@ export class WebSocketHandler {
 
         // Стиснути BGRA -> JPEG перед відправкою
         let compressedFrame: Buffer;
-        let codec = 'bgra';
+        let codec: typeof FRAME_CODECS.BGRA | typeof FRAME_CODECS.JPEG = FRAME_CODECS.BGRA;
         
         try {
             compressedFrame = await this.compressor.compress(
@@ -221,7 +233,7 @@ export class WebSocketHandler {
                 metadata.width,
                 metadata.height
             );
-            codec = 'jpeg';
+            codec = FRAME_CODECS.JPEG;
         } catch (error) {
             logger.error('❌ Помилка стиснення, відправляємо оригінал:', error);
             compressedFrame = frameData; // Fallback до RAW
@@ -236,7 +248,7 @@ export class WebSocketHandler {
             if (viewer && viewer.ws.readyState === WebSocket.OPEN) {
                 // Відправити метадані (з оновленим codec та size)
                 this.sendMessage(viewer.ws, {
-                    type: 'frame_metadata',
+                    type: MESSAGE_TYPES.FRAME_METADATA,
                     ...metadata,
                     size: compressedFrame.length,
                     codec: codec
@@ -264,11 +276,19 @@ export class WebSocketHandler {
         
         if (!streamId) {
             logger.warn(`⚠️ Клієнт ${clientId} намагається приєднатися без streamId`);
+            const client = this.clientManager.getClient(clientId);
+            if (client) {
+                this.sendMessage(client.ws, {
+                    type: MESSAGE_TYPES.ERROR,
+                    message: ERRORS.MISSING_STREAM_ID,
+                    timestamp: Date.now()
+                });
+            }
             return;
         }
 
         // Встановити тип клієнта як viewer
-        this.clientManager.setClientType(clientId, 'viewer');
+        this.clientManager.setClientType(clientId, CLIENT_TYPES.VIEWER);
 
         // Додати до потоку
         const success = this.streamManager.addViewer(streamId, clientId);
@@ -277,14 +297,14 @@ export class WebSocketHandler {
         if (client) {
             if (success) {
                 this.sendMessage(client.ws, {
-                    type: 'joined_stream',
+                    type: MESSAGE_TYPES.JOINED_STREAM,
                     streamId,
                     timestamp: Date.now()
                 });
             } else {
                 this.sendMessage(client.ws, {
-                    type: 'error',
-                    message: 'Stream not found',
+                    type: MESSAGE_TYPES.ERROR,
+                    message: ERRORS.STREAM_NOT_FOUND,
                     timestamp: Date.now()
                 });
             }
@@ -295,7 +315,7 @@ export class WebSocketHandler {
         const client = this.clientManager.getClient(clientId);
         if (client) {
             this.sendMessage(client.ws, {
-                type: 'pong',
+                type: MESSAGE_TYPES.PONG,
                 timestamp: Date.now()
             });
         }
@@ -312,7 +332,7 @@ export class WebSocketHandler {
 
         logger.info(`🔌 Клієнт відключився: ${clientId} (${client.type})`);
 
-        if (client.type === 'capture_client') {
+        if (client.type === CLIENT_TYPES.CAPTURE) {
             // Видалити потік
             const stream = this.streamManager.getStreamByCaptureClient(clientId);
             if (stream) {
@@ -322,7 +342,7 @@ export class WebSocketHandler {
                     const viewer = this.clientManager.getClient(viewerId);
                     if (viewer) {
                         this.sendMessage(viewer.ws, {
-                            type: 'stream_ended',
+                            type: MESSAGE_TYPES.STREAM_ENDED,
                             streamId: stream.streamId,
                             timestamp: Date.now()
                         });
@@ -331,7 +351,7 @@ export class WebSocketHandler {
 
                 this.streamManager.removeStream(stream.streamId);
             }
-        } else if (client.type === 'viewer') {
+        } else if (client.type === CLIENT_TYPES.VIEWER) {
             // Видалити з потоку
             for (const stream of this.streamManager.getActiveStreams()) {
                 if (stream.viewerIds.has(clientId)) {
@@ -355,7 +375,7 @@ export class WebSocketHandler {
 
     private sendCommand(ws: WebSocket, command: any): void {
         this.sendMessage(ws, {
-            type: 'command',
+            type: MESSAGE_TYPES.COMMAND,
             command,
             timestamp: Date.now()
         });
