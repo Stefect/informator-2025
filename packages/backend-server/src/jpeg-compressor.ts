@@ -25,15 +25,20 @@ export class JPEGCompressor {
         try {
             this.frameCount++;
 
-            // Sharp підтримує BGRA формат напряму
+            // BGRA формат потребує конвертації:
+            // 1. Поміняти R ↔ B (BGRA → RGBA)
+            // 2. Видалити Alpha (RGBA → RGB)
+            this.swapRedBlue(bgraBuffer);
+
+            // Тепер у нас RGBA, Sharp може конвертувати в JPEG
             const jpegBuffer = await sharp(bgraBuffer, {
                 raw: {
                     width,
                     height,
-                    channels: 4 // BGRA = 4 channels
+                    channels: 4 // RGBA = 4 channels
                 }
             })
-            .removeAlpha() // Видалити alpha channel (BGRA -> BGR)
+            .removeAlpha() // RGBA -> RGB
             .jpeg({
                 quality: this.config.quality,
                 chromaSubsampling: this.config.chroma,
@@ -56,6 +61,19 @@ export class JPEGCompressor {
         } catch (error) {
             logger.error('❌ Помилка JPEG стиснення:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Поміняти червоний та синій канали (BGRA → RGBA)
+     * Виконується in-place для швидкості
+     */
+    private swapRedBlue(buffer: Buffer): void {
+        for (let i = 0; i < buffer.length; i += 4) {
+            const temp = buffer[i];     // B
+            buffer[i] = buffer[i + 2];  // B ← R
+            buffer[i + 2] = temp;       // R ← B
+            // G та A залишаються без змін
         }
     }
 

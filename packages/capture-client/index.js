@@ -22,6 +22,8 @@ let ws = null;
 let captureInterval = null;
 let frameNumber = 0;
 let isInitialized = false;
+let captureWidth = 1280;  // За замовчуванням
+let captureHeight = 720;  // За замовчуванням
 
 console.log('🎥 Real Capture Client (NAPI)');
 console.log(`🔌 Підключення до ${SERVER_URL}...`);
@@ -40,7 +42,10 @@ function initializeCapture() {
         });
 
         if (result.success) {
-            console.log(`✅ Захоплення ініціалізовано: ${result.width}x${result.height} @ 30 FPS`);
+            // Зберегти реальні розміри захоплення
+            captureWidth = result.width;
+            captureHeight = result.height;
+            console.log(`✅ Захоплення ініціалізовано: ${captureWidth}x${captureHeight} @ 30 FPS`);
             isInitialized = true;
             return true;
         } else {
@@ -175,13 +180,14 @@ function captureAndSendFrame() {
             const isEncoded = result.encoded || false;
             sendFrame(result.data, result.size, isEncoded);
         } else {
-            // Помилка захоплення або немає даних - відправляємо тестові дані
+            // Помилка захоплення або немає даних
             if (result.error && result.error !== 'NO_NEW_FRAME') {
-                if (frameNumber % 50 === 0) {
+                if (frameNumber % 100 === 0) {
                     console.log(`⚠️ ${result.error}`);
                 }
             }
-            sendTestFrame();
+            // ВАЖЛИВО: НЕ відправляємо тестові кадри - вони мають неправильний розмір
+            // і викликають помилки Sharp при JPEG компресії
         }
     } catch (error) {
         console.error('❌ Помилка при захопленні:', error.message);
@@ -190,8 +196,9 @@ function captureAndSendFrame() {
 }
 
 function sendFrame(frameData, size, isEncoded) {
-    const width = 1280; // Відповідає реальному розміру
-    const height = 720;
+    // Використовуємо реальні розміри захоплення
+    const width = captureWidth;
+    const height = captureHeight;
     
     // Метадані кадру
     const metadata = {
