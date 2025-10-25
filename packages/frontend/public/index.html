@@ -51,6 +51,7 @@
             <div class="control-panel">
                 <button id="connectBtn" onclick="connect()">Підключитися</button>
                 <button id="disconnectBtn" onclick="disconnect()" disabled>Відключитися</button>
+                <button id="refreshBtn" onclick="refreshStreams()" disabled>🔄 Оновити стріми</button>
                 
                 <div class="settings">
                     <label>
@@ -59,7 +60,7 @@
                     </label>
                     <label>
                         Stream ID:
-                        <input type="text" id="streamIdInput" placeholder="Буде отримано автоматично">
+                        <input type="text" id="streamIdInput" placeholder="Автоматично знайде стрім">
                     </label>
                 </div>
             </div>

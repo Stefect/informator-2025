@@ -52,13 +52,15 @@ function connect() {
             if (streamIdValue) {
                 joinStream(streamIdValue);
             } else {
-                // Очікуємо отримання streamId від першого Capture Client
+                // Автоматично отримати список активних стрімів
                 log('⏳ Очікування активних потоків...');
+                // Функція вже викликається в sendIdentification()
             }
             
             // Оновити кнопки
             document.getElementById('connectBtn').disabled = true;
             document.getElementById('disconnectBtn').disabled = false;
+            document.getElementById('refreshBtn').disabled = false;
             
             hideError();
         };
@@ -110,6 +112,7 @@ function disconnect() {
     // Оновити кнопки
     document.getElementById('connectBtn').disabled = false;
     document.getElementById('disconnectBtn').disabled = true;
+    document.getElementById('refreshBtn').disabled = true;
     
     // Зупинити відео
     stopVideo();
@@ -370,6 +373,11 @@ function log(message, ...args) {
 
 function clearLog() {
     document.getElementById('logContainer').innerHTML = '';
+}
+
+function refreshStreams() {
+    log('🔄 Оновлення списку стрімів...');
+    requestAvailableStreams();
 }
 
 // Оновлення статистики кожну секунду
