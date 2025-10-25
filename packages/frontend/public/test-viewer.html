@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Viewer - Informator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        #video {
+            width: 100%;
+            max-width: 1280px;
+            background: #000;
+            border: 2px solid #333;
+        }
+        #log {
+            background: #000;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 20px;
+            border: 1px solid #333;
+        }
+        .log-entry {
+            margin: 2px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Viewer</h1>
+    
+    <div>
+        <button onclick="connect()">Підключитися</button>
+        <button onclick="disconnect()">Відключитися</button>
+    </div>
+    
+    <canvas id="video" width="1280" height="720"></canvas>
+    
+    <div id="stats">
+        <p>Статус: <span id="status">Відключено</span></p>
+        <p>Stream ID: <span id="streamId">-</span></p>
+        <p>Кадрів отримано: <span id="frames">0</span></p>
+    </div>
+    
+    <div id="log"></div>
+
+    <script>
+        let ws = null;
+        let streamId = null;
+        let frameCount = 0;
+        let frameWidth = 1280;
+        let frameHeight = 720;
+        let lastMetadata = null;
+        const canvas = document.getElementById('video');
+        const ctx = canvas.getContext('2d');
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function connect() {
+            const url = 'ws://localhost:3001';
+            log(`🔌 Підключення до ${url}...`);
+            document.getElementById('status').textContent = 'Підключення...';
+            
+            ws = new WebSocket(url);
+            ws.binaryType = 'arraybuffer';
+
+            ws.onopen = () => {
+                log('✅ WebSocket підключено');
+                document.getElementById('status').textContent = 'Підключено';
+                
+                // Ідентифікація як viewer
+                const identification = {
+                    type: 'identification',
+                    clientType: 'viewer',
+                    version: '2.0.0'
+                };
+                ws.send(JSON.stringify(identification));
+                log('📤 Ідентифікацію відправлено');
+                
+                // Запитати потоки через 500ms
+                setTimeout(requestStreams, 500);
+            };
+
+            ws.onmessage = (event) => {
+                if (event.data instanceof ArrayBuffer) {
+                    // Бінарні дані - кадр
+                    handleFrame(event.data);
+                } else {
+                    // Текст - повідомлення
+                    try {
+                        const message = JSON.parse(event.data);
+                        handleMessage(message);
+                    } catch (e) {
+                        log('❌ Помилка парсингу: ' + e.message);
+                    }
+                }
+            };
+
+            ws.onclose = () => {
+                log('⚠️ WebSocket відключено');
+                document.getElementById('status').textContent = 'Відключено';
+            };
+
+            ws.onerror = (error) => {
+                log('❌ WebSocket помилка: ' + error);
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function requestStreams() {
+            log('🔍 Запит списку потоків...');
+            fetch('http://localhost:3001/api/streams')
+                .then(r => r.json())
+                .then(data => {
+                    log(`📊 Отримано ${data.streams.length} потоків`);
+                    if (data.streams.length > 0) {
+                        const stream = data.streams[data.streams.length - 1]; // Останній потік
+                        streamId = stream.streamId;
+                        log(`🎯 Підключення до потоку: ${streamId}`);
+                        document.getElementById('streamId').textContent = streamId;
+                        
+                        // Приєднатися до потоку
+                        const joinMessage = {
+                            type: 'join_stream',
+                            streamId: streamId
+                        };
+                        ws.send(JSON.stringify(joinMessage));
+                        log('📤 join_stream відправлено');
+                    } else {
+                        log('⚠️ Немає активних потоків');
+                    }
+                })
+                .catch(e => log('❌ Помилка запиту потоків: ' + e.message));
+        }
+
+        function handleMessage(message) {
+            log(`📥 ${message.type}`);
+            
+            switch (message.type) {
+                case 'welcome':
+                    log(`👋 Client ID: ${message.clientId}`);
+                    break;
+                case 'joined_stream':
+                    log(`✅ Приєдналися до потоку: ${message.streamId}`);
+                    break;
+                case 'frame_metadata':
+                    // Зберегти метадані кадру для наступного бінарного пакету
+                    lastMetadata = message;
+                    if (frameCount === 0) {
+                        log(`🎬 Перший кадр: ${message.width}x${message.height}, codec: ${message.codec}`);
+                    }
+                    break;
+            }
+        }
+
+        function handleFrame(arrayBuffer) {
+            frameCount++;
+            document.getElementById('frames').textContent = frameCount;
+            
+            if (frameCount % 10 === 0) {
+                log(`📺 Отримано кадр #${frameCount} (${arrayBuffer.byteLength} bytes)`);
+            }
+            
+            // Відобразити дані на canvas
+            try {
+                const width = lastMetadata ? lastMetadata.width : frameWidth;
+                const height = lastMetadata ? lastMetadata.height : frameHeight;
+                const codec = lastMetadata ? lastMetadata.codec : 'unknown';
+                
+                // Оновити розмір canvas якщо потрібно
+                if (canvas.width !== width || canvas.height !== height) {
+                    canvas.width = width;
+                    canvas.height = height;
+                    log(`🖼️ Canvas розмір: ${width}x${height}`);
+                }
+                
+                if (codec === 'jpeg') {
+                    // JPEG формат - декодувати через Image
+                    const blob = new Blob([arrayBuffer], { type: 'image/jpeg' });
+                    const imageUrl = URL.createObjectURL(blob);
+                    const img = new Image();
+                    
+                    img.onload = () => {
+                        ctx.drawImage(img, 0, 0, width, height);
+                        URL.revokeObjectURL(imageUrl);
+                    };
+                    
+                    img.onerror = () => {
+                        log('❌ Помилка декодування JPEG');
+                        URL.revokeObjectURL(imageUrl);
+                    };
+                    
+                    img.src = imageUrl;
+                    
+                } else if (codec === 'bgra') {
+                    // BGRA RAW формат
+                    const expectedSize = width * height * 4;
+                    
+                    if (arrayBuffer.byteLength === expectedSize) {
+                        const imageData = ctx.createImageData(width, height);
+                        const bgraData = new Uint8Array(arrayBuffer);
+                        
+                        // Конвертувати BGRA -> RGBA для Canvas
+                        for (let i = 0; i < bgraData.length; i += 4) {
+                            imageData.data[i + 0] = bgraData[i + 2]; // R
+                            imageData.data[i + 1] = bgraData[i + 1]; // G
+                            imageData.data[i + 2] = bgraData[i + 0]; // B
+                            imageData.data[i + 3] = 255;              // A
+                        }
+                        
+                        ctx.putImageData(imageData, 0, 0);
+                    } else {
+                        log(`⚠️ BGRA розмір не співпадає: ${arrayBuffer.byteLength} vs ${expectedSize}`);
+                    }
+                } else {
+                    // Невідомий формат
+                    log(`⚠️ Невідомий codec: ${codec}`);
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '32px Arial';
+                    ctx.fillText(`Невідомий формат: ${codec}`, 50, height / 2);
+                }
+            } catch (e) {
+                log(`❌ Помилка візуалізації: ${e.message}`);
+            }
+        }
+    </script>
+</body>
+</html>

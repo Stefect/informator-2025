@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informator - Перегляд потоку</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎥 Informator - Перегляд потоку</h1>
+            <p class="subtitle">Real-time screen capture streaming</p>
+        </header>
+
+        <main>
+            <!-- Статус підключення -->
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-label">Статус:</span>
+                    <span id="connectionStatus" class="status-value disconnected">Відключено</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Stream ID:</span>
+                    <span id="streamId" class="status-value">-</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">FPS:</span>
+                    <span id="fps" class="status-value">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Роздільність:</span>
+                    <span id="resolution" class="status-value">-</span>
+                </div>
+            </div>
+
+            <!-- Контейнер для відео -->
+            <div class="video-container">
+                <video id="videoPlayer" autoplay playsinline muted></video>
+                <div id="loadingOverlay" class="loading-overlay">
+                    <div class="spinner"></div>
+                    <p>Очікування потоку...</p>
+                </div>
+                <div id="errorOverlay" class="error-overlay" style="display: none;">
+                    <p id="errorMessage"></p>
+                    <button onclick="reconnect()">Перепідключитися</button>
+                </div>
+            </div>
+
+            <!-- Панель керування -->
+            <div class="control-panel">
+                <button id="connectBtn" onclick="connect()">Підключитися</button>
+                <button id="disconnectBtn" onclick="disconnect()" disabled>Відключитися</button>
+                
+                <div class="settings">
+                    <label>
+                        Server URL:
+                        <input type="text" id="serverUrl" value="ws://localhost:3001" placeholder="ws://localhost:3001">
+                    </label>
+                    <label>
+                        Stream ID:
+                        <input type="text" id="streamIdInput" placeholder="Буде отримано автоматично">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Статистика -->
+            <div class="stats-panel">
+                <h3>📊 Статистика</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Отримано кадрів:</span>
+                        <span id="framesReceived" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Пропущено кадрів:</span>
+                        <span id="framesDropped" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Отримано даних:</span>
+                        <span id="bytesReceived" class="stat-value">0 MB</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Час підключення:</span>
+                        <span id="connectionTime" class="stat-value">0s</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Лог -->
+            <div class="log-panel">
+                <h3>📝 Лог подій</h3>
+                <div id="logContainer" class="log-container"></div>
+                <button onclick="clearLog()">Очистити лог</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>Informator 2025 - Real-time Screen Capture System</p>
+        </footer>
+    </div>
+
+    <script src="js/stream-player.js"></script>
+    <script src="js/websocket-client.js"></script>
+    <script>
+        // Ініціалізація при завантаженні сторінки
+        window.addEventListener('load', () => {
+            log('✅ Сторінка завантажена');
+            
+            // Автоматичне підключення при завантаженні (опціонально)
+            // connect();
+        });
+    </script>
+</body>
+</html>

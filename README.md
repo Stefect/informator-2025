@@ -1,228 +1,453 @@
-# 📺 CaptureStream - YouTube Live Clone<div align="center">
+# Informator - Real-time Screen Capture System# 📺 CaptureStream - YouTube Live Clone<div align="center">
 
 
 
-<div align="center"># 🖥️ CaptureStream
+> Windows screen capture система з мінімальним споживанням ресурсів для конкурсу
 
 
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)### Професійна система захоплення та трансляції екрану в реальному часі
-
-![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
-
-![MongoDB](https://img.shields.io/badge/mongodb-8.0%2B-green.svg)[![Live Demo](https://img.shields.io/badge/Live-capturestream.com-blue?style=for-the-badge)](http://capturestream.com/)
-
-![TypeScript](https://img.shields.io/badge/typescript-5.2-blue.svg)[![GitHub](https://img.shields.io/badge/GitHub-informator--2025-181717?style=for-the-badge&logo=github)](https://github.com/Stefect/informator-2025)
-
-![License](https://img.shields.io/badge/license-MIT-blue.svg)[![Node](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js)](https://nodejs.org/)
-
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.2-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-
-**Професійна платформа для live streaming з підтримкою OBS Studio та browser streaming**
-
-[🚀 Live Demo](http://capturestream.com/) | [📺 Стрімер](http://capturestream.com/host.html) | [👁️ Глядач](http://capturestream.com/viewer.html) | [📖 Документація](./DEPLOYMENT-GUIDE.md)
-
-[🌐 Live Demo](http://capturestream.com) • [📖 Документація](#-документація) • [🚀 Quick Start](#-швидкий-старт) • [📊 API](#-api-endpoints)
-
----
-
-</div>
-
-</div>
-
----
-
-## 🌟 Про проект
-
-## 🎯 Огляд проекту
-
-**CaptureStream** (Informator) - це потужний інструмент для захоплення та трансляції робочого столу в реальному часі через веб-браузер. Повністю безкоштовний та open-source.
-
-CaptureStream - це повнофункціональна платформа для live streaming, що поєднує можливості YouTube Live з професійними інструментами трансляції. Підтримує streaming через браузер та OBS Studio, автоматичну конвертацію в HLS, запис потоків та real-time взаємодію з глядачами.
-
-## 🎯 Основні можливості
-
-### ✨ Ключові можливості
-
-- 🎥 **Live відео-стрім** з робочого столу (15/30/60 FPS)
-
-🎥 **Dual Streaming Mode**- 🌐 **Веб-інтерфейс** для перегляду стріму
-
-- Browser streaming (Screen Capture API)- ⚡ **Налаштування FPS** в реальному часі
-
-- OBS Studio (RTMP)- 📊 **Статистика потоку** (кадри, розмір, FPS)
-
-- 🎨 **Красивий інтерфейс** з українською мовою
-
-📡 **RTMP Server**- 🔧 **Нативний модуль захоплення** (C++/N-API)
-
-- Професійний RTMP ingestion- ☁️ **GitHub Codespaces підтримка**
-
-- FFmpeg оптимізація
-
-- Hardware acceleration support## 🚀 Швидкий старт
+## 📋 Опис проєкту<div align="center"># 🖥️ CaptureStream
 
 
+
+Система захоплення екрану в реальному часі для Windows 10/11 з використанням:
+
+- **DXGI Desktop Duplication API** - для захоплення екрану з мінімальним навантаженням
+
+- **Node.js NAPI Addons** - нативні C++ модулі для прямої інтеграції з Windows API![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)### Професійна система захоплення та трансляції екрану в реальному часі
+
+- **WebSocket** - для стрімінгу відео в реальному часі
+
+- **TypeScript Backend** - для керування потоками та з'єднаннями![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
+
+
+
+## 🎯 Вимоги конкурсу (виконані)![MongoDB](https://img.shields.io/badge/mongodb-8.0%2B-green.svg)[![Live Demo](https://img.shields.io/badge/Live-capturestream.com-blue?style=for-the-badge)](http://capturestream.com/)
+
+
+
+✅ **1. TypeScript + NAPI** - Весь код на TypeScript/JavaScript, нативні компоненти на C++ NAPI  ![TypeScript](https://img.shields.io/badge/typescript-5.2-blue.svg)[![GitHub](https://img.shields.io/badge/GitHub-informator--2025-181717?style=for-the-badge&logo=github)](https://github.com/Stefect/informator-2025)
+
+✅ **2. Без .exe та ffmpeg** - Використовуємо тільки Node.js NAPI аддони  
+
+✅ **3. Структурований код** - Монорепозиторій з packages/  ![License](https://img.shields.io/badge/license-MIT-blue.svg)[![Node](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js)](https://nodejs.org/)
+
+✅ **4. Без нативних залежностей** - Працює на чистій Windows без інсталяцій  
+
+✅ **5. Стабільний стрімінг** - DXGI забезпечує постійне захоплення  [![TypeScript](https://img.shields.io/badge/TypeScript-5.2-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+
+✅ **6. Читабельний текст** - 1280x720 мінімум, масштабується до нативної роздільності  
+
+✅ **7. Мінімум 3 FPS** - Налаштовується (зараз 5 FPS)  **Професійна платформа для live streaming з підтримкою OBS Studio та browser streaming**
+
+✅ **8. До 10 Мбіт/с** - BGRA RAW (потребує H.264 енкодера на Backend)  
+
+✅ **9. Без скриншотів** - DXGI Desktop Duplication, справжній відеопотік  [🚀 Live Demo](http://capturestream.com/) | [📺 Стрімер](http://capturestream.com/host.html) | [👁️ Глядач](http://capturestream.com/viewer.html) | [📖 Документація](./DEPLOYMENT-GUIDE.md)
+
+
+
+## 🏗️ Архітектура[🌐 Live Demo](http://capturestream.com) • [📖 Документація](#-документація) • [🚀 Quick Start](#-швидкий-старт) • [📊 API](#-api-endpoints)
+
+
+
+```---
+
+Informator/
+
+├── packages/</div>
+
+│   ├── backend-server/          # WebSocket сервер (TypeScript)
+
+│   │   ├── src/</div>
+
+│   │   │   ├── index.ts        # Головний сервер
+
+│   │   │   ├── websocket-handler.ts  # WebSocket логіка---
+
+│   │   │   ├── stream-manager.ts     # Управління потоками
+
+│   │   │   └── client-manager.ts     # Управління клієнтами## 🌟 Про проект
+
+│   │   └── package.json
+
+│   │## 🎯 Огляд проекту
+
+│   ├── capture-client/          # Клієнт захоплення (JavaScript + NAPI)
+
+│   │   ├── native/              # C++ NAPI аддони**CaptureStream** (Informator) - це потужний інструмент для захоплення та трансляції робочого столу в реальному часі через веб-браузер. Повністю безкоштовний та open-source.
+
+│   │   │   ├── screen-capture.cpp   # DXGI захоплення
+
+│   │   │   ├── encoder.cpp          # Media Foundation H.264CaptureStream - це повнофункціональна платформа для live streaming, що поєднує можливості YouTube Live з професійними інструментами трансляції. Підтримує streaming через браузер та OBS Studio, автоматичну конвертацію в HLS, запис потоків та real-time взаємодію з глядачами.
+
+│   │   │   └── module.cpp           # NAPI біндинги
+
+│   │   ├── index.js            # Головний клієнт## 🎯 Основні можливості
+
+│   │   └── binding.gyp         # node-gyp конфігурація
+
+│   │### ✨ Ключові можливості
+
+│   └── frontend/                # Веб-інтерфейс
+
+│       └── public/- 🎥 **Live відео-стрім** з робочого столу (15/30/60 FPS)
+
+│           ├── index.html
+
+│           ├── test-viewer.html     # Тестовий viewer🎥 **Dual Streaming Mode**- 🌐 **Веб-інтерфейс** для перегляду стріму
+
+│           └── js/
+
+│               ├── stream-player.js- Browser streaming (Screen Capture API)- ⚡ **Налаштування FPS** в реальному часі
+
+│               └── websocket-client.js
+
+│- OBS Studio (RTMP)- 📊 **Статистика потоку** (кадри, розмір, FPS)
+
+├── .env                         # Конфігурація (не комітиться)
+
+├── package.json                 # Root package- 🎨 **Красивий інтерфейс** з українською мовою
+
+└── README.md                    # Ця документація
+
+```📡 **RTMP Server**- 🔧 **Нативний модуль захоплення** (C++/N-API)
+
+
+
+## 🚀 Швидкий старт- Професійний RTMP ingestion- ☁️ **GitHub Codespaces підтримка**
+
+
+
+### Передумови- FFmpeg оптимізація
+
+
+
+- **Windows 10/11** (обов'язково)- Hardware acceleration support## 🚀 Швидкий старт
+
+- **Node.js 18+** 
+
+- **Visual Studio Build Tools 2019+** (для компіляції NAPI)
+
+- **Python 3.x** (для node-gyp)
 
 🎬 **HLS Conversion**### 🌐 Онлайн версія (Рекомендовано)
 
+### 1. Встановлення залежностей
+
 - Автоматична конвертація RTMP → HLS
 
-- Low latency (5-8 seconds)**Найпростіший спосіб** - використати онлайн версію:
+```powershell
+
+# Root- Low latency (5-8 seconds)**Найпростіший спосіб** - використати онлайн версію:
+
+npm install
 
 - Широка сумісність
 
-1. **Головна сторінка**: [http://capturestream.com/](http://capturestream.com/)
+# Backend Server
+
+cd packages/backend-server1. **Головна сторінка**: [http://capturestream.com/](http://capturestream.com/)
+
+npm install
 
 💾 **MongoDB Integration**
 
-- Persistent storage2. **Для стрімера**: [http://capturestream.com/host.html](http://capturestream.com/host.html)
+# Capture Client
 
-- Stream metadata
+cd packages/capture-client- Persistent storage2. **Для стрімера**: [http://capturestream.com/host.html](http://capturestream.com/host.html)
 
-- User management3. **Для глядачів**: [http://capturestream.com/viewer.html](http://capturestream.com/viewer.html)
+npm install
 
-- Recording tracking
+```- Stream metadata
 
-### 💻 Локальна установка
+
+
+### 2. Компіляція NAPI аддону- User management3. **Для глядачів**: [http://capturestream.com/viewer.html](http://capturestream.com/viewer.html)
+
+
+
+```powershell- Recording tracking
+
+cd packages/capture-client
+
+npm run build:native### 💻 Локальна установка
+
+```
 
 📝 **Enhanced Logging**
 
+### 3. Запуск системи
+
 - Winston з daily rotation#### Вимоги
 
-- Structured JSON logs- Node.js 16+ 
+**Термінал 1 - Backend Server:**
 
-- Кольорові логи з емодзі- Windows (з GDI підтримкою)
+```powershell- Structured JSON logs- Node.js 16+ 
+
+cd packages/backend-server
+
+npm start- Кольорові логи з емодзі- Windows (з GDI підтримкою)
+
+```
 
 - Окремі файли для RTMP/WebSocket- Visual Studio Build Tools (для компіляції нативного модуля)
 
+**Термінал 2 - Capture Client:**
 
+```powershell
 
-🎨 **YouTube-style UI**### Встановлення
+cd packages/capture-client
+
+npm start🎨 **YouTube-style UI**### Встановлення
+
+```
 
 - Темна тема
 
-- Responsive design1. Клонуйте репозиторій:
+**Термінал 3 - Відкрити Viewer:**
 
-- Real-time updates
+```powershell- Responsive design1. Клонуйте репозиторій:
+
+# Відкрийте браузер
+
+http://localhost:3001/test-viewer.html- Real-time updates
+
+```
 
 ```bash
+
+## 🔧 Конфігурація
 
 ⚡ **Performance Optimized**git clone https://github.com/Stefect/informator-2025.git
 
+### Capture Client (.env)
+
 - Frame bufferingcd informator-2025
 
-- WebSocket compression```
+```env
 
-- Memory management
+SERVER_URL=ws://localhost:3001- WebSocket compression```
 
-- Auto garbage collection2. Встановіть залежності:
+CAPTURE_WIDTH=1280
 
-```bash
+CAPTURE_HEIGHT=720- Memory management
 
-📊 **Real-time Analytics**npm install
+CAPTURE_FPS=5
 
-- Viewers count```
-
-- FPS tracking
-
-- Bandwidth monitoring3. Скомпілюйте проект:
-
-- System health checks```bash
-
-npm run build
-
----```
+```- Auto garbage collection2. Встановіть залежності:
 
 
 
-## 🏗️ Архітектура4. Запустіть сервер:
+### Backend Server (.env)```bash
 
-```bash
 
-### Технологічний стекnpm start
+
+```env📊 **Real-time Analytics**npm install
+
+PORT=3001
+
+NODE_ENV=development- Viewers count```
+
+LOG_LEVEL=info
+
+```- FPS tracking
+
+
+
+## 📊 Технічні характеристики- Bandwidth monitoring3. Скомпілюйте проект:
+
+
+
+### Поточна реалізація- System health checks```bash
+
+
+
+| Параметр | Значення | Статус |npm run build
+
+|----------|----------|--------|
+
+| Роздільність | 1280x720 | ✅ |---```
+
+| FPS | 5 | ✅ |
+
+| Формат даних | BGRA RAW | ✅ |
+
+| Розмір кадру | 3.6 MB | ⚠️ |
+
+| Трафік | ~144 Мбіт/с | ❌ (потребує H.264) |## 🏗️ Архітектура4. Запустіть сервер:
+
+| CPU (Client) | <5% | ✅ |
+
+| RAM (Client) | <100 MB | ✅ |```bash
+
+
+
+### Необхідні покращення### Технологічний стекnpm start
+
+
+
+1. **H.264 енкодер** - додати на Backend (дозволено ТЗ пункт 4)```
+
+   - Зменшить трафік до ~2-5 Мбіт/с
+
+   - Виконає вимогу #8 (до 10 Мбіт/с)#### Backend
+
+
+
+2. **Media Foundation фікс** - виправити енкодер в NAPI- **Runtime**: Node.js 18+5. Відкрийте браузер:
+
+   - Альтернатива Backend енкодеру
+
+   - Кодування на клієнті (менше навантаження на Backend)- **Language**: TypeScript 5.2- **Для стрімера**: http://localhost:3001/host.html
+
+
+
+## 🛠️ Розробка- **Framework**: Express.js- **Для глядачів**: http://localhost:3001/viewer.html
+
+
+
+### Компіляція Backend- **WebSocket**: ws library
+
+
+
+```powershell- **Database**: MongoDB 8.0 + Mongoose### ☁️ Створення власного Codespace
+
+cd packages/backend-server
+
+npm run build- **RTMP**: node-media-server
 
 ```
-
-#### Backend
-
-- **Runtime**: Node.js 18+5. Відкрийте браузер:
-
-- **Language**: TypeScript 5.2- **Для стрімера**: http://localhost:3001/host.html
-
-- **Framework**: Express.js- **Для глядачів**: http://localhost:3001/viewer.html
-
-- **WebSocket**: ws library
-
-- **Database**: MongoDB 8.0 + Mongoose### ☁️ Створення власного Codespace
-
-- **RTMP**: node-media-server
 
 - **Transcoding**: FFmpeg1. Перейдіть на [GitHub Repository](https://github.com/Stefect/informator-2025)
 
+### Перекомпіляція NAPI
+
 - **Logging**: Winston2. Натисніть "Code" → "Codespaces" → "Create codespace on main"
 
-- **Process Manager**: PM23. Дочекайтеся автоматичного налаштування
+```powershell
 
-4. Відкрийте порти 3001 для публічного доступу
+cd packages/capture-client- **Process Manager**: PM23. Дочекайтеся автоматичного налаштування
+
+npm run clean       # Видалити build/
+
+npm run build:native4. Відкрийте порти 3001 для публічного доступу
+
+```
 
 #### Frontend
 
+### Тестування
+
 - **Core**: HTML5 + CSS3 + Vanilla JavaScript## 📁 Структура проекту
 
-- **Video**: Canvas API
+```powershell
 
-- **Streaming**: Screen Capture API```
+# API Endpoints- **Video**: Canvas API
+
+curl http://localhost:3001/health
+
+curl http://localhost:3001/api/streams- **Streaming**: Screen Capture API```
+
+curl http://localhost:3001/api/clients
 
 - **Communication**: WebSocket clientinformator-2025/
 
-- **Theme**: YouTube Dark (custom)├── src/
+# WebSocket перевірка в браузері
+
+ws://localhost:3001- **Theme**: YouTube Dark (custom)├── src/
+
+```
 
 │   ├── server.ts          # Основний сервер
 
+## 📝 API Documentation
+
 #### Infrastructure│   └── client.ts          # Клієнт захоплення
+
+### WebSocket Events
 
 - **Database**: MongoDB (local/Atlas)├── host.html             # Інтерфейс стрімера
 
-- **Process Management**: PM2├── viewer.html           # Інтерфейс глядача
+**Client → Server:**
 
-- **Reverse Proxy**: Nginx (optional)├── package.json
+- `identification` - Ідентифікація клієнта- **Process Management**: PM2├── viewer.html           # Інтерфейс глядача
 
-- **CDN**: Cloudflare (optional)├── tsconfig.json
+- `frame_metadata` - Метадані кадру
 
-- **Domain**: capturestream.com└── README.md
+- Binary data - Бінарні дані кадру- **Reverse Proxy**: Nginx (optional)├── package.json
+
+
+
+**Server → Client:**- **CDN**: Cloudflare (optional)├── tsconfig.json
+
+- `welcome` - Привітання після з'єднання
+
+- `stream_created` - Потік створено- **Domain**: capturestream.com└── README.md
+
+- `command` - Команда (start_capture, stop_capture)
 
 ```
+
+### HTTP Endpoints
 
 ### Схема системи
 
-## 🎮 Використання
+- `GET /health` - Статус сервера
+
+- `GET /api/streams` - Список активних потоків## 🎮 Використання
+
+- `GET /api/clients` - Список підключених клієнтів
 
 ```
 
+## 🐛 Відомі проблеми
+
 ┌─────────────────────────────────────────────────────────────┐1. **Запустіть сервер** командою `npm start`
 
-│                    CaptureStream Platform                    │2. **Стрімер** відкриває `host.html` для контролю трансляції
+1. **Media Foundation енкодер** - не ініціалізується (HRESULT: 0xC00D6D77)
 
-├─────────────────────────────────────────────────────────────┤3. **Глядачі** відкривають `viewer.html` для перегляду
+   - Рішення: використовувати RAW + Backend H.264│                    CaptureStream Platform                    │2. **Стрімер** відкриває `host.html` для контролю трансляції
+
+   
+
+2. **Високий трафік** - 144 Мбіт/с замість 10 Мбіт/с├─────────────────────────────────────────────────────────────┤3. **Глядачі** відкривають `viewer.html` для перегляду
+
+   - Рішення: додати H.264 енкодер
 
 │                                                               │4. **Насолоджуйтесь** плавним live відео з робочого столу!
 
-│  ┌─────────────┐              ┌──────────────┐              │
+3. **Test viewer** - показує зелений градієнт замість екрану
 
-│  │   Browser   │─────3001────▶│  WebSocket   │              │## ⚙️ Технології
+   - Потребує конвертації BGRA → Canvas правильно│  ┌─────────────┐              ┌──────────────┐              │
 
-│  │  Streamer   │              │    Server    │              │
 
-│  └─────────────┘              └──────┬───────┘              │- **Backend**: Node.js, Express.js, WebSocket (ws)
 
-│                                      │                       │- **Frontend**: HTML5, Canvas API, WebSocket API
+## 📜 Ліцензія│  │   Browser   │─────3001────▶│  WebSocket   │              │## ⚙️ Технології
 
-│  ┌─────────────┐              ┌─────▼────────┐              │- **Native**: C++, N-API, Windows GDI
 
-│  │     OBS     │─────1935────▶│     RTMP     │              │- **Build**: node-gyp, Visual Studio Build Tools
 
-│  │   Studio    │              │    Server    │              │
+MIT License - створено для конкурсу Informator 2025│  │  Streamer   │              │    Server    │              │
+
+
+
+## 👥 Автори│  └─────────────┘              └──────┬───────┘              │- **Backend**: Node.js, Express.js, WebSocket (ws)
+
+
+
+Informator Team - [GitHub](https://github.com/Stefect/informator-2025)│                                      │                       │- **Frontend**: HTML5, Canvas API, WebSocket API
+
+
+
+---│  ┌─────────────┐              ┌─────▼────────┐              │- **Native**: C++, N-API, Windows GDI
+
+
+
+**Версія:** 2.0.0 (NAPI + DXGI Implementation)  │  │     OBS     │─────1935────▶│     RTMP     │              │- **Build**: node-gyp, Visual Studio Build Tools
+
+**Дата:** 25 жовтня 2025  
+
+**Статус:** ✅ Базова функціональність працює, потребує H.264 енкодера│  │   Studio    │              │    Server    │              │
+
 
 │  └─────────────┘              └──────┬───────┘              │## 📝 Команди
 

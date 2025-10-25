@@ -1,0 +1,35 @@
+{
+  "name": "@informator/capture-client",
+  "version": "2.0.0",
+  "description": "Windows screen capture client with NAPI addons (DXGI + BGRA RAW streaming)",
+  "main": "index.js",
+  "scripts": {
+    "build:native": "node-gyp rebuild",
+    "start": "node index.js",
+    "clean": "rimraf build"
+  },
+  "dependencies": {
+    "ws": "^8.14.2",
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
+    "node-addon-api": "^8.5.0",
+    "node-gyp": "^10.0.0"
+  },
+  "keywords": [
+    "screen-capture",
+    "windows",
+    "dxgi",
+    "napi",
+    "real-time",
+    "low-resource"
+  ],
+  "author": "Informator Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "os": [
+    "win32"
+  ]
+}

@@ -1,0 +1,43 @@
+# Docker Compose для Backend Server
+
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./packages/backend-server
+      dockerfile: Dockerfile
+    container_name: informator-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - HOST=0.0.0.0
+      - SERVE_FRONTEND=true
+      - LOG_LEVEL=info
+    volumes:
+      - ./logs:/app/logs
+      - ./recordings:/app/recordings
+    restart: unless-stopped
+    networks:
+      - informator-network
+
+  # MongoDB (опціонально)
+  # mongodb:
+  #   image: mongo:7
+  #   container_name: informator-mongodb
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #   restart: unless-stopped
+  #   networks:
+  #     - informator-network
+
+networks:
+  informator-network:
+    driver: bridge
+
+# volumes:
+#   mongodb_data:

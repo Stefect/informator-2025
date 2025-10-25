@@ -1,0 +1,45 @@
+{
+  "name": "informator-2025",
+  "version": "2.0.0",
+  "description": "Real-time screen capture system for Windows with minimal resource usage",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm run install:packages",
+    "install:packages": "cd packages/capture-client && npm install && cd ../backend-server && npm install",
+    "build:client": "cd packages/capture-client && npm run build:all",
+    "build:server": "cd packages/backend-server && npm run build",
+    "build:all": "npm run build:client && npm run build:server",
+    "start:server": "cd packages/backend-server && npm start",
+    "start:client": "cd packages/capture-client && npm start",
+    "dev:server": "cd packages/backend-server && npm run dev",
+    "dev:client": "cd packages/capture-client && npm run dev",
+    "clean": "rimraf packages/*/dist packages/*/build packages/*/node_modules"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Stefect/informator-2025.git"
+  },
+  "keywords": [
+    "screen-capture",
+    "windows",
+    "real-time",
+    "streaming",
+    "napi",
+    "dxgi",
+    "h264",
+    "websocket",
+    "low-resource"
+  ],
+  "author": "Informator Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.0"
+  }
+}
